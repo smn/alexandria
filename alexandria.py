@@ -17,11 +17,8 @@ class ReallyDumbTerminal(object):
 class MenuSystem(object):
     def __init__(self):
         self.state = []
-        self.answers = {}
-    
-    def store(self, key, value):
-        self.answers[key] = value
-        return value
+        self.recorded_routines = {}
+        self.store = {}
     
     def append(self, routine):
         self.state.append(routine)
@@ -39,8 +36,22 @@ class MenuSystem(object):
         self.state.append(loop(list(items), **kwargs))
         return self
     
+    def record(self, name, *items, **kwargs):
+        self.recorded_routines[name] = list(items)
+        return self
+    
+    def play(self, name):
+        routines = self.recorded_routines.get(name, None)
+        self.state.append(play(routines))
+        return self
+    
+    def dump_state(self):
+        for idx, routine in enumerate(self.state):
+            print idx, routine.__name__
+        return self
+    
     def dump_store(self):
-        for key, value in self.answers.items():
+        for key, value in self.store.items():
             print 'key:', key, 'value:', value
         return self
     
@@ -61,9 +72,12 @@ def coroutine(func):
 @coroutine
 def prompt(message):
     while True:
-        ms = (yield)                                # wait to be given the menu system instance
-        ms.store(message, ms.client.read(message))  # read input from client and yield it back
-
+        # wait to be given the menu system instance
+        ms = (yield)
+        # initialize storage as a list if it doesn't exist
+        ms.store.setdefault(message, [])
+        # read input from client and store it
+        ms.store[message].append(ms.client.read(message))
 
 @coroutine
 def loop(items, randomize=False):
@@ -75,7 +89,15 @@ def loop(items, randomize=False):
             item = items.pop()
             item.send(ms)
 
-
+@coroutine
+def play(items, **kwargs):
+    while True:
+        # clone items for the next loop
+        cloned_items = items[:]
+        ms = (yield)
+        while cloned_items:
+            item = cloned_items.pop()
+            item.send(ms)
 @coroutine
 def display(message):
     while True:
@@ -96,17 +118,48 @@ def inbox():
         ms.prompt('Are you really %s?' % ms.answers['What is your name?'])
         ms.prompt('Yay or nay?')
 
+
+def ol(list):
+    """ordered list"""
+    return '\n'.join('%s: %s' % (idx, item) for idx,item in enumerate(list))
+
+# ms = MenuSystem()
+# ms \
+#     .prompt('What is your name?') \
+#     .loop(
+#         prompt('How old are you?'),
+#         prompt('What is your favorite food?'),
+#         prompt('What is your favorite colour?'),
+#         randomize=True
+#     ) \
+#     .mark('show inbox',
+#         prompt('This is your inbox:\n%s' % ol([
+#             'Message 1',
+#             'Message 2',
+#             'Message 3',
+#         ]))
+#     ) \
+#     .display('Thank you, goodbye') \
+#     .do('show inbox') \
+#     .append(testing_a_callback('a','b')) \
+#     .append(inbox()) \
+#     .run(client=ReallyDumbTerminal()) \
+#     .dump_store()
+
 ms = MenuSystem()
 ms \
-    .prompt('What is your name?') \
-    .loop(
-        prompt('How old are you?'),
-        prompt('What is your favorite food?'),
-        prompt('What is your favorite colour?'),
-        randomize=True
+    .record('show inbox',
+        prompt('This is your inbox:\n%s' % ol([
+            'Message 1',
+            'Message 2',
+            'Message 3',
+        ]))
     ) \
-    .display('Thank you, goodbye') \
-    .append(testing_a_callback('a','b')) \
-    .append(inbox()) \
+    .play('show inbox') \
+    .play('show inbox') \
+    .play('show inbox') \
+    .play('show inbox') \
+    .dump_state() \
     .run(client=ReallyDumbTerminal()) \
     .dump_store()
+
