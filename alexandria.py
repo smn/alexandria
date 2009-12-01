@@ -23,7 +23,7 @@ class MenuSystem(object):
         self.answers[key] = value
         return value
     
-    def callback(self, routine):
+    def append(self, routine):
         self.state.append(routine)
         return self
     
@@ -82,6 +82,20 @@ def display(message):
         ms = (yield)
         ms.client.display(message)
 
+
+@coroutine
+def testing_a_callback(*args, **kwargs):
+    while True:
+        ms = (yield)
+        ms.client.display('hello from callback: %s, %s' % (args, kwargs))
+
+@coroutine
+def inbox():
+    while True:
+        ms = (yield)
+        ms.prompt('Are you really %s?' % ms.answers['What is your name?'])
+        ms.prompt('Yay or nay?')
+
 ms = MenuSystem()
 ms \
     .prompt('What is your name?') \
@@ -92,5 +106,7 @@ ms \
         randomize=True
     ) \
     .display('Thank you, goodbye') \
+    .append(testing_a_callback('a','b')) \
+    .append(inbox()) \
     .run(client=ReallyDumbTerminal()) \
     .dump_store()
