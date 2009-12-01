@@ -20,21 +20,21 @@ class MenuSystem(object):
         self.recorded_routines = {}
         self.store = {}
     
-    def append(self, routine):
-        self.state.append(routine)
-        return self
-    
-    def prompt(self, msg):
-        self.state.append(prompt(msg))
-        return self
-    
-    def display(self, msg):
-        self.state.append(display(msg))
-        return self
-    
-    def loop(self, *items, **kwargs):
-        self.state.append(loop(list(items), **kwargs))
-        return self
+    # def append(self, routine):
+    #     self.state.append(routine)
+    #     return self
+    # 
+    # def prompt(self, msg):
+    #     self.state.append(prompt(msg))
+    #     return self
+    # 
+    # def display(self, msg):
+    #     self.state.append(display(msg))
+    #     return self
+    # 
+    # def loop(self, *items, **kwargs):
+    #     self.state.append(loop(list(items), **kwargs))
+    #     return self
     
     def record(self, name, *items, **kwargs):
         self.recorded_routines[name] = list(items)
@@ -43,6 +43,10 @@ class MenuSystem(object):
     def play(self, name):
         routines = self.recorded_routines.get(name, None)
         self.state.append(play(routines))
+        return self
+    
+    def do(self, *items):
+        self.state.append(play(list(items)))
         return self
     
     def dump_state(self):
@@ -94,6 +98,9 @@ def play(items, **kwargs):
     while True:
         # clone items for the next loop
         cloned_items = items[:]
+        # We're popping, which means we need to reverse the order because
+        # otherwise we'll get the items back to front
+        cloned_items.reverse()
         ms = (yield)
         while cloned_items:
             item = cloned_items.pop()
@@ -146,8 +153,19 @@ def ol(list):
 #     .run(client=ReallyDumbTerminal()) \
 #     .dump_store()
 
+get_personal_info = (
+    prompt('What is your name?'),
+    prompt('What is your age?'), 
+    prompt('Where do you live?')
+)
+
 ms = MenuSystem()
 ms \
+    .record('get personal info',
+        prompt('What is your name?'),
+        prompt('What is your age?'), 
+        prompt('Where do you live?')
+    ) \
     .record('show inbox',
         prompt('This is your inbox:\n%s' % ol([
             'Message 1',
@@ -155,10 +173,13 @@ ms \
             'Message 3',
         ]))
     ) \
+    .play('get personal info') \
     .play('show inbox') \
-    .play('show inbox') \
-    .play('show inbox') \
-    .play('show inbox') \
+    .do(*get_personal_info) \
+    .do(
+        display('Gee thanks!'),
+        display('No, really!')
+    ) \
     .dump_state() \
     .run(client=ReallyDumbTerminal()) \
     .dump_store()
