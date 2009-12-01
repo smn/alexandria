@@ -20,22 +20,6 @@ class MenuSystem(object):
         self.recorded_routines = {}
         self.store = {}
     
-    # def append(self, routine):
-    #     self.state.append(routine)
-    #     return self
-    # 
-    # def prompt(self, msg):
-    #     self.state.append(prompt(msg))
-    #     return self
-    # 
-    # def display(self, msg):
-    #     self.state.append(display(msg))
-    #     return self
-    # 
-    # def loop(self, *items, **kwargs):
-    #     self.state.append(loop(list(items), **kwargs))
-    #     return self
-    
     def record(self, name, *items, **kwargs):
         self.recorded_routines[name] = list(items)
         return self
@@ -179,6 +163,14 @@ ms \
     .do(
         display('Gee thanks!'),
         display('No, really!')
+    ) \
+    .do(
+        loop(
+            prompt('How old are you?'),
+            prompt('What is your favorite food?'),
+            prompt('What is your favorite colour?'),
+            randomize=True
+        )
     ) \
     .dump_state() \
     .run(client=ReallyDumbTerminal()) \
