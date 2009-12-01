@@ -20,17 +20,12 @@ class MenuSystem(object):
         self.recorded_routines = {}
         self.store = {}
     
-    def record(self, name, *items, **kwargs):
-        self.recorded_routines[name] = list(items)
-        return self
-    
-    def play(self, name):
-        routines = self.recorded_routines.get(name, None)
-        self.state.append(play(routines))
-        return self
-    
     def do(self, *items):
-        self.state.append(play(list(items)))
+        self.state.append(do(list(items)))
+        return self
+    
+    def continue_if(self, fn):
+        self.state.append(continue_if(fn))
         return self
     
     def dump_state(self):
@@ -68,17 +63,17 @@ def prompt(message):
         ms.store[message].append(ms.client.read(message))
 
 @coroutine
-def loop(items, randomize=False):
+def loop(*items, **kwargs):
+    items = list(items)
+    if 'random' in kwargs: random.shuffle(items)
     while True:
         ms = (yield)
         while items:
-            # randomize order
-            if randomize: random.shuffle(items)
             item = items.pop()
             item.send(ms)
 
 @coroutine
-def play(items, **kwargs):
+def do(items):
     while True:
         # clone items for the next loop
         cloned_items = items[:]
@@ -89,12 +84,12 @@ def play(items, **kwargs):
         while cloned_items:
             item = cloned_items.pop()
             item.send(ms)
+
 @coroutine
 def display(message):
     while True:
         ms = (yield)
         ms.client.display(message)
-
 
 @coroutine
 def testing_a_callback(*args, **kwargs):
@@ -108,6 +103,7 @@ def inbox():
         ms = (yield)
         ms.prompt('Are you really %s?' % ms.answers['What is your name?'])
         ms.prompt('Yay or nay?')
+
 
 
 def ol(list):
@@ -137,42 +133,42 @@ def ol(list):
 #     .run(client=ReallyDumbTerminal()) \
 #     .dump_store()
 
-get_personal_info = (
+get_personal_info = [
     prompt('What is your name?'),
     prompt('What is your age?'), 
     prompt('Where do you live?')
-)
+]
+
+show_inbox = [
+    prompt('This is your inbox:\n%s' % ol([
+        'Message 1',
+        'Message 2',
+        'Message 3',
+    ]))
+]
+
+def completed_personal_info(ms):
+    questions = [
+        'What is your name?',
+        'What is your age?',
+        'Where do you live?'
+    ]
+    # kludgy
+    answers = [(ms.store.get(q) != ['']) for q in questions]
+    return all(answers)
 
 ms = MenuSystem()
 ms \
-    .record('get personal info',
-        prompt('What is your name?'),
-        prompt('What is your age?'), 
-        prompt('Where do you live?')
-    ) \
-    .record('show inbox',
-        prompt('This is your inbox:\n%s' % ol([
-            'Message 1',
-            'Message 2',
-            'Message 3',
-        ]))
-    ) \
-    .play('get personal info') \
-    .play('show inbox') \
     .do(*get_personal_info) \
-    .do(
-        display('Gee thanks!'),
-        display('No, really!')
-    ) \
+    .do(*show_inbox) \
     .do(
         loop(
             prompt('How old are you?'),
             prompt('What is your favorite food?'),
             prompt('What is your favorite colour?'),
-            randomize=True
+            random=True
         )
     ) \
-    .dump_state() \
     .run(client=ReallyDumbTerminal()) \
     .dump_store()
 
