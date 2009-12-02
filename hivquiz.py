@@ -1,5 +1,5 @@
 from alexandria.client import ReallyDumbTerminal
-from alexandria.core import MenuSystem, prompt, display
+from alexandria.core import MenuSystem, prompt, display, coroutine
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 
@@ -11,6 +11,22 @@ yes_or_no = {
     'options': ('yes','no'),
     'validator': pick_one
 }
+
+@coroutine
+def do_first_unanswered(*prompts):
+    """
+    Running into an interesting problem here, I need to be able to 
+    introspect the questions here to see if they've been answered yet or not.
+    
+    Currently unable to do so.
+    """
+    prompts = list(prompts)
+    while True:
+        ms = (yield) # wait for menu system to be handed to us
+        for prompt in prompts:
+            # right now we're just doing the first one instead of intelligently
+            # picking one that hasn't been answered yet
+            yield prompt.send(ms)
 
 ms = MenuSystem()
 ms \
@@ -27,13 +43,21 @@ ms \
         ))
     ) \
     .do(
-        *shuffle(
+        do_first_unanswered(
             prompt(_('Can traditional medicine cure HIV/AIDS?'), **yes_or_no),
             prompt(_('Is an HIV test at any government clinic free of charge?'), **yes_or_no),
             prompt(_('Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'), **yes_or_no),
+        )
+    ) \
+    .do(
+        do_first_unanswered(
             prompt(_('Can HIV be transmitted by sweat?'), **yes_or_no),
             prompt(_('Is there a herbal medication that can cure HIV/AIDS?'), **yes_or_no),
             prompt(_('Does a CD4-count reflect the strength of a person\'s immune system?'), **yes_or_no),
+        )
+    ) \
+    .do(
+        do_first_unanswered(
             prompt(_('Can HIV be transmitted through a mother\'s breast milk?'), **yes_or_no),
             prompt(_('Is it possible for an HIV positive woman to deliver an HIV negative baby?'), **yes_or_no)
         )
