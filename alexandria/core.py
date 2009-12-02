@@ -14,22 +14,6 @@ class MenuSystem(object):
         [self.state.append(item) for item in list(items)]
         return self
     
-    def dump_state(self):
-        for idx, routine in enumerate(self.state):
-            print idx, routine.__name__
-        return self
-    
-    def pretty_print(self):
-        print "\n"
-        print "=" * 60
-        print "| View of current state".ljust(59) + '|'
-        print "=" * 60
-        longest_key = max([len(key) for key in self.store])
-        for key, value in self.store.items():
-            print key.ljust(longest_key + 2), ' => ', value
-        print "\n"
-        return self
-    
     def run(self, client, start_at=0):
         self.client = client
         # work on a cloned state so original state is untouched and we

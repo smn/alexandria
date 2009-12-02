@@ -26,6 +26,6 @@ def pick_one_by_digit(digit, options):
 
 def pick_one_by_value(input, options):
     for idx, entry in enumerate(options, start=1):
-        if entry == input:
+        if entry.lower() == input.lower():
             return (idx, entry)
     raise InvalidInputException, 'not one of the available options'

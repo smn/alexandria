@@ -1,6 +1,6 @@
 from alexandria.client import ReallyDumbTerminal
 from alexandria.core import MenuSystem, prompt
-from alexandria.utils import shuffle
+from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 
 # items can be grouped together and referred to on the fly
@@ -37,4 +37,4 @@ ms \
 for step, routine in ms.run(start_at=0, client=ReallyDumbTerminal()):
     # ms is always available at every step, we can track the step we're
     # at with the client and also what state the client is at
-    ms.pretty_print()
+    print table('Current state', ms.store.items())
