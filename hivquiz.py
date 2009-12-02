@@ -1,5 +1,5 @@
 from alexandria.client import ReallyDumbTerminal
-from alexandria.core import MenuSystem, prompt
+from alexandria.core import MenuSystem, prompt, display
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 
@@ -15,28 +15,37 @@ yes_or_no = {
 ms = MenuSystem()
 ms \
     .do(
-        prompt('Choose your language',options=(
+        prompt('Thnx 4 taking the Quiz! Answer 3 questions and see how much you know'+
+                '. Pick your language:', options=(
             'English',
-            'Dutch'
-        ), validator=pick_one)
-    ) \
-    .do(
+            'Zulu',
+            'Afrikaans',
+            'Sotho',
+        ), validator=pick_one),
         prompt(_('You will be asked to answer 3 questions regarding HIV. ' +
             'Answer them correctly and stand a chance to win airtime!'
         ))
     ) \
     .do(
         *shuffle(
-            prompt('Can traditional medicine cure HIV/AIDS?', **yes_or_no),
-            prompt('Is an HIV test at any government clinic free of charge?', **yes_or_no),
-            prompt('Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?', **yes_or_no),
-            prompt('Can HIV be transmitted by sweat?', **yes_or_no),
-            prompt('Is there a herbal medication that can cure HIV/AIDS?', **yes_or_no),
-            prompt('Does a CD4-count reflect the strength of a person\'s immune system? ', **yes_or_no),
-            prompt('Can HIV be transmitted through a mother\'s breast milk?', **yes_or_no),
-            prompt('Is it possible for an HIV positive woman to deliver an HIV negative baby?', **yes_or_no)
+            prompt(_('Can traditional medicine cure HIV/AIDS?'), **yes_or_no),
+            prompt(_('Is an HIV test at any government clinic free of charge?'), **yes_or_no),
+            prompt(_('Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'), **yes_or_no),
+            prompt(_('Can HIV be transmitted by sweat?'), **yes_or_no),
+            prompt(_('Is there a herbal medication that can cure HIV/AIDS?'), **yes_or_no),
+            prompt(_('Does a CD4-count reflect the strength of a person\'s immune system?'), **yes_or_no),
+            prompt(_('Can HIV be transmitted through a mother\'s breast milk?'), **yes_or_no),
+            prompt(_('Is it possible for an HIV positive woman to deliver an HIV negative baby?'), **yes_or_no)
         )
+    ) \
+    .do(
+        display(_('For more information about HIV/AIDS please phone the Aids '+
+                    'Helpline on 0800012322.  This is a free call from a landline. '+
+                    'Normal cell phone rates apply.'))
     )
 
-for step, routine in ms.run(client=ReallyDumbTerminal()):
-    print '\n\n' + table('Current state', ms.store.items()) + '\n\n'
+# run through the system
+[(step, routine) for step, routine in ms.run(client=ReallyDumbTerminal("msisdn"))]
+
+# print summary
+print '\n\n' + table('Current state', ms.store.items()) + '\n\n'

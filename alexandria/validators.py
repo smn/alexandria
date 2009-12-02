@@ -1,7 +1,7 @@
 from exceptions import InvalidInputException
 
 def always_true(input, options):
-    return True
+    return input or True
 
 def non_empty_string(input, options):
     if not input.strip(): raise InvalidInputException, 'empty string'

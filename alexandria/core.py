@@ -70,5 +70,5 @@ def display(message):
     while True:
         ms = (yield)
         ms.client.display(message)
-
+        yield True
 
