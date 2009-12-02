@@ -22,7 +22,7 @@ class MenuSystem(object):
         while cloned_state:
             current_step = len(self.state) - len(cloned_state)
             routine = cloned_state[0]
-            result = routine.send(self)
+            result = routine.invoke().send(self)
             if result:
                 cloned_state.remove(routine)
                 yield (current_step, routine)
@@ -35,6 +35,26 @@ def coroutine(func):
         return cr 
     return start 
 
+
+class DelayedCall(object):
+    def __init__(self, fn, *args, **kwargs):
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+    
+    def __str__(self):
+        return 'DelayedCall(%s)' % self.__dict__
+    
+    def invoke(self):
+        return self.fn(*self.args, **self.kwargs)
+    
+
+def delay(fn):
+    def wrapper(*args, **kwargs):
+        return DelayedCall(fn,*args, **kwargs)
+    return wrapper
+
+@delay
 @coroutine
 def prompt(text, validator=always_true, options=()):
     while True:
@@ -51,6 +71,7 @@ def prompt(text, validator=always_true, options=()):
         except InvalidInputException, e:
             print 'Invalid input received', e
 
+@delay
 @coroutine
 def do(items):
     while True:
@@ -59,12 +80,13 @@ def do(items):
         ms = (yield)
         while cloned_items:
             item = cloned_items[-1]
-            result = item.send(ms)
+            result = item.invoke().send(ms)
             # only remove from the queue if we've gotten an answer, which means
             # it's been validated
             if result:
                 cloned_items.remove(item)
 
+@delay
 @coroutine
 def display(message):
     while True:

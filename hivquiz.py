@@ -1,5 +1,5 @@
 from alexandria.client import ReallyDumbTerminal
-from alexandria.core import MenuSystem, prompt, display, coroutine
+from alexandria.core import MenuSystem, prompt, display, coroutine, delay
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 
@@ -12,6 +12,7 @@ yes_or_no = {
     'validator': pick_one
 }
 
+@delay
 @coroutine
 def do_first_unanswered(*prompts):
     """
@@ -26,7 +27,7 @@ def do_first_unanswered(*prompts):
         for prompt in prompts:
             # right now we're just doing the first one instead of intelligently
             # picking one that hasn't been answered yet
-            yield prompt.send(ms)
+            yield prompt.invoke().send(ms)
 
 ms = MenuSystem()
 ms \
@@ -67,6 +68,9 @@ ms \
                     'Helpline on 0800012322.  This is a free call from a landline. '+
                     'Normal cell phone rates apply.'))
     )
+
+for dc in ms.state:
+    print dc
 
 # run through the system
 [(step, routine) for step, routine in ms.run(client=ReallyDumbTerminal("msisdn"))]
