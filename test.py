@@ -32,7 +32,9 @@ ms \
             )),
             prompt('What is your favorite colour?', validator=non_empty_string),
         )
-    ) \
-    .run(client=ReallyDumbTerminal()) \
-    .dump_store()
-
+    )
+    
+for step, routine in ms.run(start_at=0, client=ReallyDumbTerminal()):
+    # ms is always available at every step, we can track the step we're
+    # at with the client and also what state the client is at
+    ms.pretty_print()

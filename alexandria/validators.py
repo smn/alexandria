@@ -4,7 +4,7 @@ def always_true(input, options):
     return True
 
 def non_empty_string(input, options):
-    if input.isspace(): raise InvalidInputException, 'empty string'
+    if not input.strip(): raise InvalidInputException, 'empty string'
     return input.strip()
 
 def integer(input, options):

@@ -4,12 +4,14 @@ from utils import msg
 
 class MenuSystem(object):
     def __init__(self):
+        # a list of items to work through in this menu
         self.state = []
-        self.recorded_routines = {}
+        # an in-memory key value store
         self.store = {}
     
-    def do(self, *items, **kwargs):
-        self.state.append(do(list(items), **kwargs))
+    def do(self, *items):
+        """Append a batch of items to the state"""
+        [self.state.append(item) for item in list(items)]
         return self
     
     def dump_state(self):
@@ -17,7 +19,7 @@ class MenuSystem(object):
             print idx, routine.__name__
         return self
     
-    def dump_store(self):
+    def pretty_print(self):
         print "\n"
         print "=" * 60
         print "| View of current state".ljust(59) + '|'
@@ -28,10 +30,18 @@ class MenuSystem(object):
         print "\n"
         return self
     
-    def run(self, client):
+    def run(self, client, start_at=0):
         self.client = client
-        [routine.send(self) for routine in self.state]
-        return self
+        # work on a cloned state so original state is untouched and we
+        # can always continue from where we left off previously
+        cloned_state = self.state[start_at:]
+        while cloned_state:
+            current_step = len(self.state) - len(cloned_state)
+            routine = cloned_state[0]
+            result = routine.send(self)
+            if result:
+                cloned_state.remove(routine)
+                yield (current_step, routine)
     
 
 def coroutine(func): 
