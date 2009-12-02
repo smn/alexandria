@@ -20,12 +20,8 @@ class MenuSystem(object):
         self.recorded_routines = {}
         self.store = {}
     
-    def do(self, *items):
-        self.state.append(do(list(items)))
-        return self
-    
-    def continue_if(self, fn):
-        self.state.append(continue_if(fn))
+    def do(self, *items, **kwargs):
+        self.state.append(do(list(items), **kwargs))
         return self
     
     def dump_state(self):
@@ -42,6 +38,7 @@ class MenuSystem(object):
         self.client = client
         [routine.send(self) for routine in self.state]
         return self
+    
 
 
 # from http://www.dabeaz.com/coroutines/Coroutines.pdf
@@ -60,30 +57,21 @@ def prompt(message):
         # initialize storage as a list if it doesn't exist
         ms.store.setdefault(message, [])
         # read input from client and store it
-        ms.store[message].append(ms.client.read(message))
+        answer = ms.client.read(message)
+        ms.store[message].append(answer)
+        yield answer
 
 @coroutine
-def loop(*items, **kwargs):
-    items = list(items)
-    if 'random' in kwargs: random.shuffle(items)
-    while True:
-        ms = (yield)
-        while items:
-            item = items.pop()
-            item.send(ms)
-
-@coroutine
-def do(items):
+def do(items, repeat_if=lambda input: False):
     while True:
         # clone items for the next loop
         cloned_items = items[:]
-        # We're popping, which means we need to reverse the order because
-        # otherwise we'll get the items back to front
-        cloned_items.reverse()
         ms = (yield)
         while cloned_items:
-            item = cloned_items.pop()
-            item.send(ms)
+            item = cloned_items[-1]
+            result = item.send(ms)
+            if not repeat_if(result):
+                cloned_items.remove(item)
 
 @coroutine
 def display(message):
@@ -133,6 +121,10 @@ def ol(list):
 #     .run(client=ReallyDumbTerminal()) \
 #     .dump_store()
 
+def input_is_empty(input):
+    # returns true if input is None, [], () or a blank string
+    return not input or not input.strip()
+
 get_personal_info = [
     prompt('What is your name?'),
     prompt('What is your age?'), 
@@ -147,27 +139,21 @@ show_inbox = [
     ]))
 ]
 
-def completed_personal_info(ms):
-    questions = [
-        'What is your name?',
-        'What is your age?',
-        'Where do you live?'
-    ]
-    # kludgy
-    answers = [(ms.store.get(q) != ['']) for q in questions]
-    return all(answers)
+def shuffle(items):
+    random.shuffle(items)
+    return items
 
 ms = MenuSystem()
 ms \
-    .do(*get_personal_info) \
+    .do(*get_personal_info, repeat_if=input_is_empty) \
     .do(*show_inbox) \
     .do(
-        loop(
+        *shuffle([
             prompt('How old are you?'),
             prompt('What is your favorite food?'),
             prompt('What is your favorite colour?'),
-            random=True
-        )
+        ]),
+        repeat_if=input_is_empty
     ) \
     .run(client=ReallyDumbTerminal()) \
     .dump_store()
