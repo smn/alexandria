@@ -18,8 +18,14 @@ class MenuSystem(object):
         return self
     
     def dump_store(self):
+        print "\n"
+        print "=" * 60
+        print "| View of current state".ljust(59) + '|'
+        print "=" * 60
+        longest_key = max([len(key) for key in self.store])
         for key, value in self.store.items():
-            print 'key:', key, 'value:', value
+            print key.ljust(longest_key + 2), ' => ', value
+        print "\n"
         return self
     
     def run(self, client):
