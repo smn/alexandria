@@ -20,7 +20,7 @@ def pick_first_unanswered(*prompts):
         ms = (yield)
         # it is unanswered if the current prompts' key isn't available in
         # in the MenuSystem's key/value store
-        unanswered_prompts = [p for p in prompts if (p.args[0] not in ms.store)]
+        unanswered_prompts = [p for p in prompts if (p.args[0] not in ms.client.store)]
         while unanswered_prompts:
             prompt = unanswered_prompts[0]
             result = prompt.invoke().send(ms)
@@ -82,10 +82,10 @@ ms \
         )
     ) \
     .do(
-        test(lambda ms: len(ms.store) == 10, display(_('Thank you you\'ve answered all questions!')))
+        test(lambda ms: len(ms.client.store) == 10, display(_('Thank you you\'ve answered all questions!')))
     ) \
     .do(
-        test(lambda ms: len(ms.store) != 10, display(_('Dial in again to answer the remaining questions')))
+        test(lambda ms: len(ms.client.store) != 10, display(_('Dial in again to answer the remaining questions')))
     ) \
     .do(
         display(_('For more information about HIV/AIDS please phone the Aids '+
@@ -93,17 +93,18 @@ ms \
                     'Normal cell phone rates apply.'))
     )
 
-# prepopulate answers for testing
-ms.store['Can traditional medicine cure HIV/AIDS?'] = [True]
-ms.store['Is an HIV test at any government clinic free of charge?'] = [True]
-ms.store['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [True]
-ms.store['Can HIV be transmitted by sweat?'] = [True]
-ms.store['Is there a herbal medication that can cure HIV/AIDS?'] = [True]
-ms.store['Does a CD4-count reflect the strength of a person\'s immune system?'] = [True]
-ms.store['Can HIV be transmitted through a mother\'s breast milk?'] = [True]
+# # prepopulate answers for testing
+# ms.client.store['Can traditional medicine cure HIV/AIDS?'] = [True]
+# ms.client.store['Is an HIV test at any government clinic free of charge?'] = [True]
+# ms.client.store['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [True]
+# ms.client.store['Can HIV be transmitted by sweat?'] = [True]
+# ms.client.store['Is there a herbal medication that can cure HIV/AIDS?'] = [True]
+# ms.client.store['Does a CD4-count reflect the strength of a person\'s immune system?'] = [True]
+# ms.client.store['Can HIV be transmitted through a mother\'s breast milk?'] = [True]
 
-# run through the system
-[(step, routine) for step, routine in ms.run(client=ReallyDumbTerminal("msisdn"))]
+if __name__ == '__main__':
+    # run through the system
+    [(step, routine) for step, routine in ms.run(client=ReallyDumbTerminal("msisdn"))]
 
-# print summary
-print '\n\n' + table('Current state', ms.store.items()) + '\n\n'
+    # print summary
+    print '\n\n' + table('Current state', ms.client.store.items()) + '\n\n'

@@ -6,8 +6,6 @@ class MenuSystem(object):
     def __init__(self):
         # a list of items to work through in this menu
         self.state = []
-        # an in-memory key value store
-        self.store = {}
     
     def do(self, *items):
         """Append a batch of items to the state"""
@@ -68,12 +66,12 @@ def prompt(text, validator=always_true, options=()):
         # wait to be given the menu system instance
         ms = (yield)
         # initialize storage as a list if it doesn't exist
-        ms.store.setdefault(text, [])
+        ms.client.store.setdefault(text, [])
         # read input from client and store it
         answer = ms.client.read(msg(text, options))
         try:
             validated_answer = validator(answer, options)
-            ms.store[text].append(validated_answer)
+            ms.client.store[text].append(validated_answer)
             yield validated_answer
         except InvalidInputException, e:
             print 'Invalid input received', e
