@@ -37,6 +37,7 @@ def coroutine(func):
 
 
 class DelayedCall(object):
+    """FIXME: This is a solution to a lower problem that hasn't been adressed yet"""
     def __init__(self, fn, *args, **kwargs):
         self.fn = fn
         self.args = args
@@ -49,12 +50,18 @@ class DelayedCall(object):
         return self.fn(*self.args, **self.kwargs)
     
 
-def delay(fn):
+
+def delay_call(fn):
+    """Wrap the call to the function in a DelayedCall, not sure if I want 
+    to keep this. The main reason is that DelayedCalls are easier to introspect
+    than coroutine generators. I'd like to know something about the coroutine
+    I'm starting before it runs"""
     def wrapper(*args, **kwargs):
         return DelayedCall(fn,*args, **kwargs)
     return wrapper
 
-@delay
+
+@delay_call
 @coroutine
 def prompt(text, validator=always_true, options=()):
     while True:
@@ -71,7 +78,8 @@ def prompt(text, validator=always_true, options=()):
         except InvalidInputException, e:
             print 'Invalid input received', e
 
-@delay
+
+@delay_call
 @coroutine
 def do(items):
     while True:
@@ -86,7 +94,7 @@ def do(items):
             if result:
                 cloned_items.remove(item)
 
-@delay
+@delay_call
 @coroutine
 def display(message):
     while True:
