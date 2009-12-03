@@ -68,7 +68,7 @@ def prompt(text, validator=always_true, options=()):
         # initialize storage as a list if it doesn't exist
         ms.client.store.setdefault(text, [])
         # read input from client and store it
-        answer = ms.client.read(msg(text, options))
+        answer = ms.client.read().send(msg(text, options))
         try:
             validated_answer = validator(answer, options)
             ms.client.store[text].append(validated_answer)

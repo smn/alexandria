@@ -1,3 +1,4 @@
+from alexandria.core import coroutine
 class ReallyDumbTerminal(object):
     
     def __init__(self, client_id):
@@ -7,11 +8,18 @@ class ReallyDumbTerminal(object):
     def format(self, msg, append='\n<- '):
         return '-> ' + '\n-> '.join(msg.split('\n')) + append
     
+    @coroutine
     def display(self, msg):
-        print self.format(msg, append ='')
+        while True:
+            msg = (yield)
+            print self.format(msg, append ='')
+            yield ''
     
-    def read(self, msg=''):
-        return raw_input(self.format(msg))
+    @coroutine
+    def read(self):
+        while True:
+            msg = (yield)
+            yield raw_input(self.format(msg))
     
 
 
