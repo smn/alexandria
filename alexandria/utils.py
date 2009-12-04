@@ -16,6 +16,39 @@ def shuffle(*items):
     return items
 
 
+def coroutine(func): 
+    def start(*args,**kwargs): 
+        cr = func(*args,**kwargs) 
+        cr.next() 
+        return cr 
+    return start 
+
+
+class DelayedCall(object):
+    """FIXME: This is a solution to a lower problem that hasn't been adressed yet"""
+    def __init__(self, fn, *args, **kwargs):
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+    
+    def __str__(self):
+        return 'DelayedCall(%s)' % self.__dict__
+    
+    def invoke(self):
+        return self.fn(*self.args, **self.kwargs)
+    
+
+
+def delay_call(fn):
+    """Wrap the call to the function in a DelayedCall, not sure if I want 
+    to keep this. The main reason is that DelayedCalls are easier to introspect
+    than coroutine generators. I'd like to know something about the coroutine
+    I'm starting before it runs"""
+    def wrapper(*args, **kwargs):
+        return DelayedCall(fn,*args, **kwargs)
+    return wrapper
+
+
 def table(header, data):
     """print a pretty table for in the console"""
     column_widths = {}
