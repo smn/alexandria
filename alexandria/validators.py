@@ -12,6 +12,7 @@ def integer(input, options):
     return int(input)
 
 def pick_one(input, options):
+    if not isinstance(input, str): raise InvalidInputException, 'not a string'
     if input.isdigit():
         return pick_one_by_digit(int(input), options)
     else:

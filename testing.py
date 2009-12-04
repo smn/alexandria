@@ -1,16 +1,12 @@
-from alexandria.core import coroutine
+from hivquiz import *
+from alexandria.client import * 
 
-@coroutine
-def ioloop():
+def test():
     while True:
-        incoming = (yield)
-        print 'got incoming', incoming
-        outgoing = (yield)
-        print 'got outgoing', outgoing
-        yield incoming
-    
+        var = yield 'a'
+        print 'var', var
+    yield
 
-
-g = ioloop()
-for i in range(0,10):
-    print g.send(i)
+# client = ReallyDumbTerminal('msisdn')
+# gen = client.process(ms)
+# for i in ms.run(): print i

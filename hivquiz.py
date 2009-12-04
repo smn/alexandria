@@ -1,5 +1,6 @@
 from alexandria.client import ReallyDumbTerminal
-from alexandria.core import MenuSystem, prompt, display, coroutine, delay_call
+from alexandria.exceptions import InvalidInputException
+from alexandria.core import MenuSystem, prompt, display, consumer
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 
@@ -12,52 +13,27 @@ yes_or_no = {
     'validator': pick_one
 }
 
-@delay_call
-@coroutine
+@consumer
 def pick_first_unanswered(*prompts):
     prompts = list(prompts)
     while True:
-        ms = (yield)
-        # it is unanswered if the current prompts' key isn't available in
-        # in the MenuSystem's key/value store
-        unanswered_prompts = [p for p in prompts if (p.args[0] not in ms.store)]
-        while unanswered_prompts:
-            prompt = unanswered_prompts[0]
-            result = prompt.invoke().send(ms)
-            # make sure we get a result
-            if result:
-                # only remove the prompt if we've got a result, otherwise try again
-                unanswered_prompts.remove(prompt)
-                yield result
-        # always yield True when there are no unanswered_prompts to 
-        # prevent getting stuck in a neverending loop
-        yield True
-    
+        ms = yield
+        prompt = prompts[0]
+        question = prompt.send(ms)
+        answer = yield question
+        prompt.send(answer)
 
 
-@delay_call
-@coroutine
+@consumer
 def test(test_fn, *prompts):
     prompts = list(prompts)
     while True:
         ms = (yield)
-        print test_fn
         if test_fn(ms):
-            print 'PASS'
             for prompt in prompts:
-                yield prompt.invoke().send(ms)
-        else:
-            print 'FAIL'
-        
+                yield prompt.send(ms)
     
 
-
-def count_store_entries(ms):
-    print len(ms.store)
-    result = len(ms.store) == 10
-    print 'returning', result
-    return result
-    
 
 ms = MenuSystem()
 ms \
@@ -97,7 +73,7 @@ ms \
         test(lambda ms: len(ms.store) == 10, display(_('Thank you you\'ve answered all questions!')))
     ) \
     .do(
-        test(count_store_entries, display(_('Dial in again to answer the remaining questions')))
+        test(lambda ms: len(ms.store) < 10, display(_('Dial in again to answer the remaining questions')))
     ) \
     .do(
         display(_('For more information about HIV/AIDS please phone the Aids '+
@@ -117,11 +93,12 @@ ms \
 if __name__ == '__main__':
     # run through the system
     client = ReallyDumbTerminal("msisdn")
+    # gen = client.process(ms)
     for args in client.process(ms):
-        # print 'client got args', args
-        continue
+        print 'client got args', args
+        # print args
         # print 'step: %s, coroutine: %s' % (step, coroutine)
         # print 'question: %s, answer: %s' % (question, answer)
 
     # print summary
-    print '\n\n' + table('Current state', ms.client.store.items()) + '\n\n'
+    print '\n\n' + table('Current state', ms.store.items()) + '\n\n'

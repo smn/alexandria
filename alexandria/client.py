@@ -1,39 +1,30 @@
-from alexandria.core import coroutine
+from alexandria.core import consumer
 class ReallyDumbTerminal(object):
     
     def __init__(self, client_id):
         self.client_id = client_id
     
     def process(self, menu_system):
-        # start the coroutine, returns a generator accepting input
-        generator = menu_system.run()
-        # first message we send should be some form of client id
-        # a way to identify the connecting user in the system
-        generator.send(self.client_id)
-        # step through the menu_sytem by looping over the generator
-        for step, coroutine, question in generator:
-            # get the answer to the current question
-            answer = self.read().send(question)
-            # yield to the client so it can have a look at the current state
-            yield step, coroutine, question, answer
-            # reply the answer back to the generator so it can continue
-            generator.send(answer)
+        for step, coroutine, question in menu_system.run():
+            answer = self.connection().send(question)
+            validated_answer = coroutine.send(answer)
+            print 'got validated_answer', validated_answer
+            yield step, coroutine, question, validated_answer
+    
+    @consumer
+    def introspect(self):
+        while True:
+            step, coroutine, question, answer = (yield)
+            print step, coroutine, question, answer
     
     def format(self, msg, append='\n<- '):
         return '-> ' + '\n-> '.join(msg.split('\n')) + append
     
-    @coroutine
-    def display(self, msg):
+    @consumer
+    def connection(self):
         while True:
-            msg = (yield)
-            print self.format(msg, append ='')
-            yield ''
-    
-    @coroutine
-    def read(self):
-        while True:
-            msg = (yield)
-            yield raw_input(self.format(msg))
+            output = yield
+            yield raw_input(self.format(output))
     
 
 

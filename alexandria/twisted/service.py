@@ -1,4 +1,4 @@
-from alexandria.core import coroutine
+from alexandria.core import consumer
 from ssmi.client import (SSMI_USSD_TYPE_NEW, SSMI_USSD_TYPE_EXISTING, 
                             SSMI_USSD_TYPE_END, SSMI_USSD_TYPE_TIMEOUT)
 
@@ -11,14 +11,14 @@ class SSMIClient(object):
         self.previous_answer = ''
         self.waiting_for_answer = False
     
-    @coroutine
+    @consumer
     def display(self):
         while True:
             msg = (yield)
             self.ssmi_client.send_ussd(self.msisdn, msg)
             yield ''
     
-    @coroutine
+    @consumer
     def read(self):
         while True:
             msg = (yield)

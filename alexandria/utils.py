@@ -16,12 +16,15 @@ def shuffle(*items):
     return items
 
 
-def coroutine(func): 
+def consumer(func): 
     def start(*args,**kwargs): 
         cr = func(*args,**kwargs) 
         cr.next() 
-        return cr 
-    return start 
+        return cr
+    start.__name__ = func.__name__
+    start.__dict__ = func.__dict__
+    start.__doc__  = func.__doc__
+    return start
 
 
 class DelayedCall(object):
