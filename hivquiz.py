@@ -16,22 +16,30 @@ yes_or_no = {
 @consumer
 def pick_first_unanswered(*prompts):
     prompts = list(prompts)
+    cloned_prompts = prompts[:]
     while True:
         ms = yield
-        prompt = prompts[0]
-        question = prompt.send(ms)
-        answer = yield question
-        prompt.send(answer)
+        while cloned_prompts:
+            prompt = cloned_prompts.pop()
+            question = prompt.send(ms)
+            # unfortunately we have the question as the full text here
+            # and we're only storing the message (without options) in the 
+            # key/value store, little clumsy but it works for now
+            if not any(question.startswith(key) for key in ms.store):
+                answer = yield question
+                yield prompt.send(answer)
 
 
 @consumer
 def test(test_fn, *prompts):
     prompts = list(prompts)
     while True:
-        ms = (yield)
+        ms = yield
         if test_fn(ms):
-            for prompt in prompts:
-                yield prompt.send(ms)
+            prompt = prompts.pop()
+            question = prompt.send(ms)
+            answer = yield question
+            yield prompt.send(answer)
     
 
 
@@ -82,13 +90,13 @@ ms \
     )
 
 # # prepopulate answers for testing
-# ms.store['Can traditional medicine cure HIV/AIDS?'] = [True]
-# ms.store['Is an HIV test at any government clinic free of charge?'] = [True]
-# ms.store['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [True]
-# ms.store['Can HIV be transmitted by sweat?'] = [True]
-# ms.store['Is there a herbal medication that can cure HIV/AIDS?'] = [True]
-# ms.store['Does a CD4-count reflect the strength of a person\'s immune system?'] = [True]
-# ms.store['Can HIV be transmitted through a mother\'s breast milk?'] = [True]
+ms.store['Can traditional medicine cure HIV/AIDS?'] = [(1, 'yes')]
+ms.store['Is an HIV test at any government clinic free of charge?'] = [(1, 'yes')]
+ms.store['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [(1, 'yes')]
+ms.store['Can HIV be transmitted by sweat?'] = [(1, 'yes')]
+ms.store['Is there a herbal medication that can cure HIV/AIDS?'] = [(1, 'yes')]
+ms.store['Does a CD4-count reflect the strength of a person\'s immune system?'] = [(1, 'yes')]
+ms.store['Can HIV be transmitted through a mother\'s breast milk?'] = [(1, 'yes')]
 
 if __name__ == '__main__':
     # run through the system

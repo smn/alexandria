@@ -11,22 +11,31 @@ class SSMIClient(object):
         self.previous_answer = ''
         self.waiting_for_answer = False
     
+    def process(self, menu_system):
+        for step, coroutine, question in menu_system.run(start_at=self.step):
+            # question might be None if for some reason the coroutine turns
+            # out not to need any user info
+            if question:
+                answer = yield self.connection().send(question)
+                print 'got answer', answer
+                validated_answer = coroutine.send(answer)
+                yield step, coroutine, question, validated_answer
+            else:
+                yield step, coroutine, question, None
+
+
     @consumer
-    def display(self):
+    def connection(self):
         while True:
-            msg = (yield)
-            self.ssmi_client.send_ussd(self.msisdn, msg)
-            yield ''
-    
-    @consumer
-    def read(self):
-        while True:
-            msg = (yield)
-            self.ssmi_client.send_ussd(self.msisdn, msg)
+            output = yield
+            print 'connection output', output
+            self.ssmi_client.send_ussd(output, self.msisdn)
             self.waiting_for_answer = True
-            answer = (yield)
+            print 'flipping waiting_for_answer'
+            response = (yield)
+            print 'got response', response
+            yield response
             self.waiting_for_answer = False
-            yield answer
     
 
 class SSMIService(object):
@@ -63,14 +72,12 @@ class SSMIService(object):
     
     def next_step(self, msisdn, message):
         client = self.get_client_for(msisdn)
-        
         if client.waiting_for_answer:
-            print 'client is still waiting for answer', message
-            client.read().send(message)
-        
-        generator = self.menu_system.run(client=client, start_at=client.step)
-        step, routine = generator.next()
-        client.step = step + 1
+            client.connection().send(message)
+        else:
+            gen = client.process(self.menu_system)
+            step, coroutine, question, answer = gen.next()
+            client.step = step + 1
     
     def timed_out_ussd_session(self, msisdn, message):
         print msisdn, 'timed out'

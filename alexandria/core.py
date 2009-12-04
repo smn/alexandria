@@ -15,12 +15,16 @@ class MenuSystem(object):
     
     def run(self, start_at=0):
         cloned_state = self.state[start_at:]
-        cloned_state.reverse()
         while cloned_state:
             current_step = len(self.state) - len(cloned_state)
-            coroutine = cloned_state.pop()
+            coroutine = cloned_state[0]
             output = coroutine.send(self)
-            yield current_step, coroutine, output
+            try:
+                yield current_step, coroutine, output
+                cloned_state.remove(coroutine)
+            except InvalidInputException, e:
+                print "repeating coroutine", coroutine
+                continue
 
 
 @consumer
@@ -28,12 +32,11 @@ def prompt(text, validator=always_true, options=()):
     while True:
         # wait to be given the menu system instance
         ms = yield
-        # initialize storage as a list if it doesn't exist
-        ms.store.setdefault(text, [])
         # read input from client and store it
         answer = yield msg(text, options)
-        print 'prompt answer: ', answer
         validated_answer = validator(answer, options)
+        # initialize storage as a list if it doesn't exist
+        ms.store.setdefault(text, [])
         ms.store[text].append(validated_answer)
         yield validated_answer
 

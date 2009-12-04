@@ -1,4 +1,6 @@
 from alexandria.core import consumer
+from alexandria.exceptions import InvalidInputException
+
 class ReallyDumbTerminal(object):
     
     def __init__(self, client_id):
@@ -6,10 +8,15 @@ class ReallyDumbTerminal(object):
     
     def process(self, menu_system):
         for step, coroutine, question in menu_system.run():
-            answer = self.connection().send(question)
-            validated_answer = coroutine.send(answer)
-            print 'got validated_answer', validated_answer
-            yield step, coroutine, question, validated_answer
+            # question might be None if for some reason the coroutine turns
+            # out not to need any user info
+            if question:
+                answer = self.connection().send(question)
+                validated_answer = coroutine.send(answer)
+                yield step, coroutine, question, validated_answer
+            else:
+                yield step, coroutine, question, None
+            
     
     @consumer
     def introspect(self):
