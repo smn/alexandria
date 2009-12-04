@@ -65,19 +65,20 @@ class SSMIService(object):
         return self.store.get(msisdn)
     
     def new_ussd_session(self, msisdn, message):
-        self.next_step(msisdn, message)
+        self.next_step().send((msisdn, message))
     
     def existing_ussd_session(self, msisdn, message):
-        self.next_step(msisdn, message)
+        self.next_step().send((msisdn, message))
     
-    def next_step(self, msisdn, message):
-        client = self.get_client_for(msisdn)
-        if client.waiting_for_answer:
-            client.connection().send(message)
-        else:
-            gen = client.process(self.menu_system)
-            step, coroutine, question, answer = gen.next()
-            client.step = step + 1
+    @consumer
+    def next_step(self):
+        while True:
+            msisdn, message = yield
+            client = self.get_client_for(msisdn)
+            if client.waiting_for_answer:
+                client.connection().send(message)
+            for step, coroutine, question, answer in client.process(self.menu_system):
+                client.step = step + 1
     
     def timed_out_ussd_session(self, msisdn, message):
         print msisdn, 'timed out'
