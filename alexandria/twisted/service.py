@@ -28,10 +28,10 @@ class SSMIClient(object):
     def connection(self):
         while True:
             output = yield
-            print 'connection output', output
+            print 'sending to phone:', output
             self.ssmi_client.send_ussd(output, self.msisdn)
             self.waiting_for_answer = True
-            print 'flipping waiting_for_answer'
+            print 'waiting for answer from phone, yielding'
             response = (yield)
             print 'got response', response
             yield response
@@ -61,8 +61,7 @@ class SSMIService(object):
         self.client.send_ussd(msisdn, msg)
     
     def get_client_for(self, msisdn):
-        self.store.setdefault(msisdn, SSMIClient(msisdn, self.client))
-        return self.store.get(msisdn)
+        return self.store.setdefault(msisdn, SSMIClient(msisdn, self.client))
     
     def new_ussd_session(self, msisdn, message):
         self.next_step().send((msisdn, message))
@@ -74,8 +73,10 @@ class SSMIService(object):
     def next_step(self):
         while True:
             msisdn, message = yield
+            print '>>> %s: %s' % (msisdn, message)
             client = self.get_client_for(msisdn)
             if client.waiting_for_answer:
+                print "received message from client", message
                 client.connection().send(message)
             for step, coroutine, question, answer in client.process(self.menu_system):
                 client.step = step + 1

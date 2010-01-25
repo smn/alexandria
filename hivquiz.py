@@ -103,7 +103,8 @@ if __name__ == '__main__':
     client = ReallyDumbTerminal("msisdn")
     # gen = client.process(ms)
     for args in client.process(ms):
-        print 'client got args', args
+        pass
+        # print 'client got args', args
         # print args
         # print 'step: %s, coroutine: %s' % (step, coroutine)
         # print 'question: %s, answer: %s' % (question, answer)

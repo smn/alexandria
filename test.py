@@ -34,7 +34,11 @@ ms \
         )
     )
     
-for step, routine in ms.run(start_at=0, client=ReallyDumbTerminal()):
+# for step, routine in ms.run(start_at=0, client=ReallyDumbTerminal()):
     # ms is always available at every step, we can track the step we're
     # at with the client and also what state the client is at
-    print table('Current state', ms.store.items())
+    # print table('Current state', ms.store.items())
+
+client = ReallyDumbTerminal("msisdn")
+for args in client.process(ms, start_at=3):
+    pass

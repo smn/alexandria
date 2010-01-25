@@ -5,25 +5,60 @@ from utils import msg, consumer
 class MenuSystem(object):
     def __init__(self):
         # a list of items to work through in this menu
-        self.state = []
+        self.state = [
+            prompt('what menu?')
+        ]
         self.store = {}
     
+    def clone(self, **kwargs):
+        """Clone self, always return a clone instead of self when chaining
+        methods, otherwise you'll get lost of confusing behaviour because
+        vars are passed by reference"""
+        clone = self.__class__.__new__(self.__class__)
+        clone.__dict__ = self.__dict__.copy()
+        clone.__dict__.update(kwargs)
+        return clone
+    
     def do(self, *items):
-        """Append a batch of items to the state"""
-        self.state.extend(list(items))
-        return self
+        """Clone the state and append a batch of items to it"""
+        clone = self.clone()
+        clone.state.extend(list(items))
+        return clone
     
     def run(self, start_at=0):
         cloned_state = self.state[start_at:]
         while cloned_state:
+            # find out where we are in the stack
             current_step = len(self.state) - len(cloned_state)
-            coroutine = cloned_state[0]
-            output = coroutine.send(self)
+            
+            # we always expect an answer before we get a response
+            incoming = (yield)
+            print '>>> %s' % incoming
+            
             try:
-                yield current_step, coroutine, output
-                cloned_state.remove(coroutine)
+                # get last question for which we will now get an answer
+                previous_coroutine = cloned_state[0]
+                print 'previous_coroutine', previous_coroutine
+                previous_coroutine.send(self) # send 'ms'
+                print 'sent ms'
+                previous_coroutine.send(incoming) # send 'answer'
+                print 'sent incoming: %s' % incoming
+                
+                # we've answered the previous answer correctly, can be
+                # removed from the state
+                cloned_state.remove(previous_coroutine)
+                print 'removed successful previous_coroutine'
+                
+                next_coroutine = cloned_state[0]
+                print 'got next coroutine'
+                next_question = next_coroutine.send(self) # send 'ms'
+                print 'next question: %s' % next_question
+                
+                print 'yielding', current_step, next_coroutine, next_question
+                yield current_step, next_coroutine, next_question
+                print 'yielded'
             except InvalidInputException, e:
-                print "repeating coroutine", coroutine
+                print "repeating coroutine", previous_coroutine
                 continue
 
 
