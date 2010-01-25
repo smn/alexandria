@@ -1,41 +1,33 @@
 from alexandria.core import consumer
 from alexandria.exceptions import InvalidInputException
 
-class ReallyDumbTerminal(object):
+class FakeUSSDClient(object):
     
     def __init__(self, client_id):
+        """
+        Should go something like so:
+        
+        >>> from collections import namedtuple
+        >>> Menu = namedtuple('Menu',['question','answer'])
+        >>> menu = Menu._make('What is your name?', '')
+        >>> fuc = FakeUSSDClient('1')
+        >>> fuc.send(menu)
+        -> what is your name?
+        <- Simon
+        >>> m.answer
+        'Simon'
+        
+        """
         self.client_id = client_id
+        self.response = ''
     
-    def process(self, menu_system, start_at=0):
-        coroutine = menu_system.run(start_at=start_at)
-        coroutine.next()
-        coroutine.send('*120*HIVQUIZ#') # initialize conversation
-        res = coroutine.next()
-        for step, coroutine, question in coroutine:
-            # question might be None if for some reason the coroutine turns
-            # out not to need any user info
-            if question:
-                answer = self.connection().send(question)
-                validated_answer = coroutine.send(answer)
-                yield step, coroutine, question, validated_answer
-            else:
-                yield step, coroutine, question, None
-            
-    
-    @consumer
-    def introspect(self):
-        while True:
-            step, coroutine, question, answer = (yield)
-            print step, coroutine, question, answer
+    def receive(self):
+        return self.response
     
     def format(self, msg, append='\n<- '):
         return '-> ' + '\n-> '.join(msg.split('\n')) + append
     
-    @consumer
-    def connection(self):
-        while True:
-            output = yield
-            yield raw_input(self.format(output))
+    def send(self, text):
+        self.response = raw_input(self.format(text))
     
-
 

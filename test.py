@@ -1,5 +1,5 @@
-from alexandria.client import ReallyDumbTerminal
-from alexandria.core import MenuSystem, prompt
+from alexandria.client import FakeUSSDClient
+from alexandria.core import MenuSystem, prompt, StateKeeper
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 
@@ -11,8 +11,8 @@ get_personal_info = [
 ]
 
 
-ms = MenuSystem()
-ms \
+menu_system = MenuSystem()
+menu_system \
     .do(*get_personal_info) \
     .do(
         # items can be added as arguments to do
@@ -34,11 +34,11 @@ ms \
         )
     )
     
-# for step, routine in ms.run(start_at=0, client=ReallyDumbTerminal()):
-    # ms is always available at every step, we can track the step we're
-    # at with the client and also what state the client is at
-    # print table('Current state', ms.store.items())
 
-client = ReallyDumbTerminal("msisdn")
-for args in client.process(ms, start_at=3):
-    pass
+client = FakeUSSDClient('27764493806')
+sk = StateKeeper(client, menu_system)
+sk.fast_forward(0)
+while sk.has_next():
+    sk.next()
+
+print table("Menu System state", menu_system.storage.items())

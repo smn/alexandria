@@ -1,14 +1,15 @@
 from validators import always_true
 from exceptions import InvalidInputException
 from utils import msg, consumer
+from contextlib import contextmanager
 
 class MenuSystem(object):
     def __init__(self):
         # a list of items to work through in this menu
-        self.state = [
-            prompt('what menu?')
+        self.stack = [
+            prompt('ident')
         ]
-        self.store = {}
+        self.storage = {}
     
     def clone(self, **kwargs):
         """Clone self, always return a clone instead of self when chaining
@@ -19,80 +20,50 @@ class MenuSystem(object):
         clone.__dict__.update(kwargs)
         return clone
     
+    def store(self, item):
+        self.storage[item.request] = item.response
+    
     def do(self, *items):
-        """Clone the state and append a batch of items to it"""
+        """Clone the stack and append a batch of items to it"""
         clone = self.clone()
-        clone.state.extend(list(items))
+        clone.stack.extend(list(items))
         return clone
     
-    def run(self, start_at=0):
-        cloned_state = self.state[start_at:]
-        while cloned_state:
-            # find out where we are in the stack
-            current_step = len(self.state) - len(cloned_state)
-            
-            # we always expect an answer before we get a response
-            incoming = (yield)
-            print '>>> %s' % incoming
-            
-            try:
-                # get last question for which we will now get an answer
-                previous_coroutine = cloned_state[0]
-                print 'previous_coroutine', previous_coroutine
-                previous_coroutine.send(self) # send 'ms'
-                print 'sent ms'
-                previous_coroutine.send(incoming) # send 'answer'
-                print 'sent incoming: %s' % incoming
-                
-                # we've answered the previous answer correctly, can be
-                # removed from the state
-                cloned_state.remove(previous_coroutine)
-                print 'removed successful previous_coroutine'
-                
-                next_coroutine = cloned_state[0]
-                print 'got next coroutine'
-                next_question = next_coroutine.send(self) # send 'ms'
-                print 'next question: %s' % next_question
-                
-                print 'yielding', current_step, next_coroutine, next_question
-                yield current_step, next_coroutine, next_question
-                print 'yielded'
-            except InvalidInputException, e:
-                print "repeating coroutine", previous_coroutine
-                continue
+    def next(self, start_at=0):
+        # return current & next items
+        return self.stack[start_at], self.stack[start_at + 1]
+    
+    
 
+class StateKeeper(object):
+    def __init__(self, client, menu_system):
+        self.index = 0
+        self.client = client
+        self.menu_system = menu_system
+    
+    def fast_forward(self, index):
+        self.index = index
+    
+    def has_next(self):
+        return self.index <= (len(self.menu_system.stack) - 2)
+        
+    def next(self):
+        current_menu, next_menu = self.menu_system.next(start_at=self.index)
+        current_menu.response = self.client.receive() # blocking
+        self.menu_system.store(current_menu)
+        self.client.send(msg(next_menu.request, next_menu.options))
+        self.index = self.index + 1
 
-@consumer
-def prompt(text, validator=always_true, options=()):
-    while True:
-        # wait to be given the menu system instance
-        ms = yield
-        # read input from client and store it
-        answer = yield msg(text, options)
-        validated_answer = validator(answer, options)
-        # initialize storage as a list if it doesn't exist
-        ms.store.setdefault(text, [])
-        ms.store[text].append(validated_answer)
-        yield validated_answer
+class prompt(object):
+    def __init__(self, request, response=None, validator=always_true, options=()):
+        self.request = request
+        self.response = response
+        self.validator = validator
+        self.options = options
+    
+    def __repr__(self):
+        return "%s, %s" % (self.request, self.options)
 
-
-@consumer
-def do(items):
-    while True:
-        # clone items for the next loop
-        cloned_items = items[:]
-        ms = (yield)
-        while cloned_items:
-            item = cloned_items[-1]
-            result = item.send(ms)
-            # only remove from the queue if we've gotten an answer, which means
-            # it's been validated
-            if result:
-                cloned_items.remove(item)
-
-@consumer
-def display(message):
-    while True:
-        ms = (yield)
-        yield message
-
+# def prompt(text, validator=always_true, options=()):
+#     return Menu(request=text, validator=validator, options=options)
+# 
