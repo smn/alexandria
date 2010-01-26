@@ -1,6 +1,6 @@
-from alexandria.client import ReallyDumbTerminal
+from alexandria.client import FakeUSSDClient
 from alexandria.exceptions import InvalidInputException
-from alexandria.core import MenuSystem, prompt, display, consumer
+from alexandria.core import MenuSystem, prompt, coroutine, StateKeeper
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 
@@ -13,7 +13,7 @@ yes_or_no = {
     'validator': pick_one
 }
 
-@consumer
+@coroutine
 def pick_first_unanswered(*prompts):
     prompts = list(prompts)
     cloned_prompts = prompts[:]
@@ -30,7 +30,7 @@ def pick_first_unanswered(*prompts):
                 yield prompt.send(answer)
 
 
-@consumer
+@coroutine
 def test(test_fn, *prompts):
     prompts = list(prompts)
     while True:
@@ -78,36 +78,42 @@ ms \
         )
     ) \
     .do(
-        test(lambda ms: len(ms.store) == 10, display(_('Thank you you\'ve answered all questions!')))
+        test(lambda ms: len(ms.store) == 10, prompt(_('Thank you you\'ve answered all questions!')))
     ) \
     .do(
-        test(lambda ms: len(ms.store) < 10, display(_('Dial in again to answer the remaining questions')))
+        test(lambda ms: len(ms.store) < 10, prompt(_('Dial in again to answer the remaining questions')))
     ) \
     .do(
-        display(_('For more information about HIV/AIDS please phone the Aids '+
+        prompt(_('For more information about HIV/AIDS please phone the Aids '+
                     'Helpline on 0800012322.  This is a free call from a landline. '+
                     'Normal cell phone rates apply.'))
     )
 
 # # prepopulate answers for testing
-ms.store['Can traditional medicine cure HIV/AIDS?'] = [(1, 'yes')]
-ms.store['Is an HIV test at any government clinic free of charge?'] = [(1, 'yes')]
-ms.store['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [(1, 'yes')]
-ms.store['Can HIV be transmitted by sweat?'] = [(1, 'yes')]
-ms.store['Is there a herbal medication that can cure HIV/AIDS?'] = [(1, 'yes')]
-ms.store['Does a CD4-count reflect the strength of a person\'s immune system?'] = [(1, 'yes')]
-ms.store['Can HIV be transmitted through a mother\'s breast milk?'] = [(1, 'yes')]
+ms.storage['Can traditional medicine cure HIV/AIDS?'] = [(1, 'yes')]
+ms.storage['Is an HIV test at any government clinic free of charge?'] = [(1, 'yes')]
+ms.storage['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [(1, 'yes')]
+ms.storage['Can HIV be transmitted by sweat?'] = [(1, 'yes')]
+ms.storage['Is there a herbal medication that can cure HIV/AIDS?'] = [(1, 'yes')]
+ms.storage['Does a CD4-count reflect the strength of a person\'s immune system?'] = [(1, 'yes')]
+ms.storage['Can HIV be transmitted through a mother\'s breast milk?'] = [(1, 'yes')]
 
 if __name__ == '__main__':
     # run through the system
-    client = ReallyDumbTerminal("msisdn")
-    # gen = client.process(ms)
-    for args in client.process(ms):
-        pass
-        # print 'client got args', args
-        # print args
-        # print 'step: %s, coroutine: %s' % (step, coroutine)
-        # print 'question: %s, answer: %s' % (question, answer)
+    client = FakeUSSDClient("msisdn")
+    
+    sk = StateKeeper(client, ms)
+    sk.fast_forward(0)
+    while sk.has_next():
+        sk.next()
+    # 
+    # # gen = client.process(ms)
+    # for args in client.process(ms):
+    #     pass
+    #     # print 'client got args', args
+    #     # print args
+    #     # print 'step: %s, coroutine: %s' % (step, coroutine)
+    #     # print 'question: %s, answer: %s' % (question, answer)
 
     # print summary
     print '\n\n' + table('Current state', ms.store.items()) + '\n\n'

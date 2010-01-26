@@ -1,4 +1,4 @@
-from alexandria.core import consumer
+from alexandria.core import coroutine
 from alexandria.exceptions import InvalidInputException
 
 class FakeUSSDClient(object):
@@ -21,13 +21,16 @@ class FakeUSSDClient(object):
         self.client_id = client_id
         self.response = ''
     
-    def receive(self):
-        return self.response
+    def connect(self, menu_system):
+        pass
     
-    def format(self, msg, append='\n<- '):
-        return '-> ' + '\n-> '.join(msg.split('\n')) + append
+    def receive(self):
+        return raw_input('<- ')
+    
+    def format(self, msg):
+        return '-> ' + '\n-> '.join(msg.split('\n'))
     
     def send(self, text):
-        self.response = raw_input(self.format(text))
+        print self.format(text)
     
 

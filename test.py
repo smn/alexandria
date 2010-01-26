@@ -1,7 +1,18 @@
 from alexandria.client import FakeUSSDClient
-from alexandria.core import MenuSystem, prompt, StateKeeper
+from alexandria.core import MenuSystem, prompt
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
+from logging.handlers import TimedRotatingFileHandler
+import logging
+
+# setup logging, printing everything will make you cross eyed, trust me
+logger = logging.getLogger()
+logger.name = "alexandria"
+logger.level = logging.DEBUG
+
+handler = TimedRotatingFileHandler("logs/alexandria.log", when='midnight', backupCount=14)
+handler.setFormatter(logging.Formatter('[%(name)s] %(asctime)s %(levelname)s %(message)s'))
+logger.addHandler(handler)
 
 # items can be grouped together and referred to on the fly
 get_personal_info = [
@@ -9,7 +20,6 @@ get_personal_info = [
     prompt('What is your age?', validator=integer), 
     prompt('Where do you live?', validator=non_empty_string)
 ]
-
 
 menu_system = MenuSystem()
 menu_system \
@@ -35,10 +45,40 @@ menu_system \
     )
     
 
-client = FakeUSSDClient('27764493806')
-sk = StateKeeper(client, menu_system)
-sk.fast_forward(0)
-while sk.has_next():
-    sk.next()
+if __name__ == '__main__':
+    logger.info(" " * 80)
+    logger.info("*" * 80)
+    logger.info("STARTING MENU")
+    logger.info("*" * 80)
+    logger.info(" " * 80)
 
-print table("Menu System state", menu_system.storage.items())
+    client = FakeUSSDClient('27764493806')
+
+    # fake the state
+    menu_system.fast_forward(3)
+    menu_system.storage['What is your name?'] = 'smn'
+    menu_system.storage['What is your age?'] = '29'
+    menu_system.storage['Where do you live?'] = 'cpt'
+
+    for current_item, next_item in iter(menu_system):
+        # receive answer and pass it to the last question that was asked
+        answer = client.receive()
+        logging.debug('received answer: %s' % answer)
+    
+        if current_item:
+            question = current_item.next() # re-read question
+            current_item.next() # proceed to answer feed manually?
+            validated_answer = current_item.send(answer) # feed answer
+            menu_system.storage.setdefault(question, []).append(validated_answer)
+            logging.debug('validated_answer is %s' % str(validated_answer))
+        else:
+            logging.debug('no current item to answer to')
+
+        if next_item:
+            next_question = next_item.next() # read question
+            logging.debug('getting next question: %s' % next_question)
+            client.send(next_question)
+        else:
+            logging.debug('no next item to ask question, end of menu reached')
+
+    print table("Menu System state", menu_system.storage.items())

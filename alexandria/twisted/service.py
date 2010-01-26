@@ -1,4 +1,4 @@
-from alexandria.core import consumer
+from alexandria.core import coroutine
 from ssmi.client import (SSMI_USSD_TYPE_NEW, SSMI_USSD_TYPE_EXISTING, 
                             SSMI_USSD_TYPE_END, SSMI_USSD_TYPE_TIMEOUT)
 
@@ -24,7 +24,7 @@ class SSMIClient(object):
                 yield step, coroutine, question, None
 
 
-    @consumer
+    @coroutine
     def connection(self):
         while True:
             output = yield
@@ -69,7 +69,7 @@ class SSMIService(object):
     def existing_ussd_session(self, msisdn, message):
         self.next_step().send((msisdn, message))
     
-    @consumer
+    @coroutine
     def next_step(self):
         while True:
             msisdn, message = yield

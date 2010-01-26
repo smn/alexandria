@@ -1,15 +1,18 @@
 from validators import always_true
 from exceptions import InvalidInputException
-from utils import msg, consumer
+from utils import msg, coroutine
 from contextlib import contextmanager
+from generator_tools.copygenerators import copy_generator
+import types
+import logging
+import copy
 
 class MenuSystem(object):
     def __init__(self):
         # a list of items to work through in this menu
-        self.stack = [
-            prompt('ident')
-        ]
+        self.stack = []
         self.storage = {}
+        self.__iter_index = 0
     
     def clone(self, **kwargs):
         """Clone self, always return a clone instead of self when chaining
@@ -29,41 +32,39 @@ class MenuSystem(object):
         clone.stack.extend(list(items))
         return clone
     
-    def next(self, start_at=0):
-        # return current & next items
-        return self.stack[start_at], self.stack[start_at + 1]
-    
-    
-
-class StateKeeper(object):
-    def __init__(self, client, menu_system):
-        self.index = 0
-        self.client = client
-        self.menu_system = menu_system
+    def __iter__(self):
+        return self
     
     def fast_forward(self, index):
-        self.index = index
+        self.__iter_index = index
     
-    def has_next(self):
-        return self.index <= (len(self.menu_system.stack) - 2)
-        
     def next(self):
-        current_menu, next_menu = self.menu_system.next(start_at=self.index)
-        current_menu.response = self.client.receive() # blocking
-        self.menu_system.store(current_menu)
-        self.client.send(msg(next_menu.request, next_menu.options))
-        self.index = self.index + 1
-
-class prompt(object):
-    def __init__(self, request, response=None, validator=always_true, options=()):
-        self.request = request
-        self.response = response
-        self.validator = validator
-        self.options = options
+        # return current & next items
+        if self.__iter_index == len(self.stack):
+            raise StopIteration
+        elif self.__iter_index == 0:
+            current = None
+            next = copy_generator(self.stack[0])
+        elif self.__iter_index == len(self.stack) - 1:
+            current = copy_generator(self.stack[-1])
+            next = None
+        else:
+            current = copy_generator(self.stack[self.__iter_index])
+            next = copy_generator(self.stack[self.__iter_index + 1])
+        self.__iter_index = self.__iter_index + 1
+        return current, next
     
-    def __repr__(self):
-        return "%s, %s" % (self.request, self.options)
 
-# def prompt(text, validator=always_true, options=()):
-#     return Menu(request=text, validator=validator, options=options)
-# 
+# @coroutine
+def prompt(text, validator=always_true, options=()):
+    while True:
+        # yield question
+        yield msg(text, options)
+        
+        # wait for answer
+        answer = yield
+        yield validator(answer, options)
+        # initialize storage as a list if it doesn't exist
+        # ms.storage.setdefault(text, [])
+        # ms.storage[text].append(validated_answer)
+        # yield validated_answer
