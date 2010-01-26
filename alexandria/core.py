@@ -23,8 +23,8 @@ class MenuSystem(object):
         clone.__dict__.update(kwargs)
         return clone
     
-    def store(self, item):
-        self.storage[item.request] = item.response
+    def store(self, key, value):
+        self.storage.setdefault(key, []).append(value)
     
     def do(self, *items):
         """Clone the stack and append a batch of items to it"""
@@ -37,6 +37,9 @@ class MenuSystem(object):
     
     def fast_forward(self, index):
         self.__iter_index = index
+    
+    def repeat_current_item(self):
+        self.__iter_index = self.__iter_index - 1
     
     def next(self):
         # return current & next items

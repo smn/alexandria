@@ -1,5 +1,6 @@
 from alexandria.client import FakeUSSDClient
 from alexandria.core import MenuSystem, prompt
+from alexandria.exceptions import InvalidInputException
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 from logging.handlers import TimedRotatingFileHandler
@@ -55,10 +56,10 @@ if __name__ == '__main__':
     client = FakeUSSDClient('27764493806')
 
     # fake the state
-    menu_system.fast_forward(3)
-    menu_system.storage['What is your name?'] = 'smn'
-    menu_system.storage['What is your age?'] = '29'
-    menu_system.storage['Where do you live?'] = 'cpt'
+    # menu_system.fast_forward(3)
+    # menu_system.store('What is your name?', 'smn')
+    # menu_system.store('What is your age?', '29')
+    # menu_system.store('Where do you live?', 'cpt')
 
     for current_item, next_item in iter(menu_system):
         # receive answer and pass it to the last question that was asked
@@ -68,9 +69,13 @@ if __name__ == '__main__':
         if current_item:
             question = current_item.next() # re-read question
             current_item.next() # proceed to answer feed manually?
-            validated_answer = current_item.send(answer) # feed answer
-            menu_system.storage.setdefault(question, []).append(validated_answer)
-            logging.debug('validated_answer is %s' % str(validated_answer))
+            try:
+                validated_answer = current_item.send(answer) # feed answer
+                menu_system.store(question, validated_answer)
+                logging.debug('validated_answer is %s' % str(validated_answer))
+            except InvalidInputException, e:
+                logger.exception(e)
+                menu_system.repeat_current_item()
         else:
             logging.debug('no current item to answer to')
 
