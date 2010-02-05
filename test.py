@@ -46,6 +46,15 @@ menu_system \
     )
     
 
+# if __name__ == '__main__':
+#     idx = 0
+#     for current_item, next_item in iter(menu_system):
+#         print table('questions %s' % idx, {
+#             'current': current_item.next().split('\n')[0] if current_item else None,
+#             'next': next_item.next().split('\n')[0] if next_item else None,
+#         }.items())
+#         idx += 1
+
 if __name__ == '__main__':
     logger.info(" " * 80)
     logger.info("*" * 80)
@@ -66,24 +75,28 @@ if __name__ == '__main__':
         answer = client.receive()
         logging.debug('received answer: %s' % answer)
     
-        if current_item:
-            question = current_item.next() # re-read question
-            current_item.next() # proceed to answer feed manually?
-            try:
+        try:
+            if current_item:
+                question = current_item.next() # re-read question
+                logging.debug('answer to "%s" is "%s"' % (question, answer))
+                current_item.next() # proceed to answer feed manually?
                 validated_answer = current_item.send(answer) # feed answer
                 menu_system.store(question, validated_answer)
                 logging.debug('validated_answer is %s' % str(validated_answer))
-            except InvalidInputException, e:
-                logger.exception(e)
-                menu_system.repeat_current_item()
-        else:
-            logging.debug('no current item to answer to')
+            else:
+                logging.debug('no current item to answer to')
 
-        if next_item:
-            next_question = next_item.next() # read question
-            logging.debug('getting next question: %s' % next_question)
-            client.send(next_question)
-        else:
-            logging.debug('no next item to ask question, end of menu reached')
+            if next_item:
+                next_question = next_item.next() # read question
+                logging.debug('getting next question: %s' % next_question)
+                client.send(next_question)
+            else:
+                logging.debug('no next item to ask question, end of menu reached')
+        except InvalidInputException, e:
+            logger.exception(e)
+            current_item = menu_system.repeat_current_item()
+            repeated_question = current_item.next()
+            logger.debug('repeating current question: %s' % repeated_question)
+            client.send(repeated_question)
 
     print table("Menu System state", menu_system.storage.items())
