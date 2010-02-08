@@ -1,7 +1,49 @@
 from alexandria.core import coroutine
 from alexandria.exceptions import InvalidInputException
+import logging
 
-class FakeUSSDClient(object):
+class Client(object):
+    
+    def answer(self, answer, item):
+        question = item.next() # re-read the question asked
+        item.next() # proceed to answer, feed manually
+        return question, item.send(answer)
+        
+    def ask(self, item):
+        question = item.next() # read question
+        return question, self.send(question)
+    
+    def step(self, current_item, next_item, menu_system):
+        # receive answer and pass it to the last question that was asked
+        answer = self.receive()
+        try:
+            if current_item:
+                question, validated_answer = self.answer(answer, current_item)
+                menu_system.store(question, validated_answer)
+            else:
+                logging.debug('no current item to answer to')
+            
+            if next_item:
+                self.ask(next_item)
+            else:
+                logging.debug('no next item to ask question, end of menu reached')
+            
+        except InvalidInputException, e:
+            logging.exception(e)
+            repeat_item = menu_system.repeat_current_item()
+            repeated_question = repeat_item.next()
+            logging.debug('repeating current question: %s' % repeated_question)
+            self.send(repeated_question)
+    
+    def do_step(self, step, menu_system):
+        menu_system.fast_forward(step)
+        self.step(*menu_system.next())
+    
+    def process(self, menu_system):
+        for current_item, next_item in iter(menu_system):
+            self.step(current_item, next_item, menu_system)
+
+class FakeUSSDClient(Client):
     
     def __init__(self, client_id):
         """
