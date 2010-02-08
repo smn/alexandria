@@ -1,6 +1,6 @@
 from alexandria.client import FakeUSSDClient
 from alexandria.exceptions import InvalidInputException
-from alexandria.core import MenuSystem, prompt, coroutine, StateKeeper
+from alexandria.core import MenuSystem, prompt, coroutine
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 
@@ -13,24 +13,27 @@ yes_or_no = {
     'validator': pick_one
 }
 
-@coroutine
+# @coroutine
 def pick_first_unanswered(*prompts):
+    # yield question
+    # wait for answer
+    # yield validated answer or raise error
     prompts = list(prompts)
     cloned_prompts = prompts[:]
     while True:
         ms = yield
         while cloned_prompts:
             prompt = cloned_prompts.pop()
-            question = prompt.send(ms)
+            question = prompt.next()
             # unfortunately we have the question as the full text here
             # and we're only storing the message (without options) in the 
             # key/value store, little clumsy but it works for now
-            if not any(question.startswith(key) for key in ms.store):
+            if question not in ms.store:
                 answer = yield question
                 yield prompt.send(answer)
 
 
-@coroutine
+# @coroutine
 def test(test_fn, *prompts):
     prompts = list(prompts)
     while True:
@@ -46,14 +49,14 @@ def test(test_fn, *prompts):
 ms = MenuSystem()
 ms \
     .do(
-        prompt('Thnx 4 taking the Quiz! Answer 3 questions and see how much you know. '+
+        prompt('Thnx 4 taking the Quiz! Answer 3 questions and see how much you know. '
                 'Pick your language:', options=(
             'English',
             'Zulu',
             'Afrikaans',
             'Sotho',
         ), validator=pick_one),
-        prompt(_('You will be asked to answer 3 questions regarding HIV. ' +
+        prompt(_('You will be asked to answer 3 questions regarding HIV. '
             'Answer them correctly and stand a chance to win airtime!'
         ))
     ) \
@@ -90,22 +93,20 @@ ms \
     )
 
 # # prepopulate answers for testing
-ms.storage['Can traditional medicine cure HIV/AIDS?'] = [(1, 'yes')]
-ms.storage['Is an HIV test at any government clinic free of charge?'] = [(1, 'yes')]
-ms.storage['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [(1, 'yes')]
-ms.storage['Can HIV be transmitted by sweat?'] = [(1, 'yes')]
-ms.storage['Is there a herbal medication that can cure HIV/AIDS?'] = [(1, 'yes')]
-ms.storage['Does a CD4-count reflect the strength of a person\'s immune system?'] = [(1, 'yes')]
-ms.storage['Can HIV be transmitted through a mother\'s breast milk?'] = [(1, 'yes')]
+# ms.fast_forward()
+# ms.storage['Can traditional medicine cure HIV/AIDS?'] = [(1, 'yes')]
+# ms.storage['Is an HIV test at any government clinic free of charge?'] = [(1, 'yes')]
+# ms.storage['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [(1, 'yes')]
+# ms.storage['Can HIV be transmitted by sweat?'] = [(1, 'yes')]
+# ms.storage['Is there a herbal medication that can cure HIV/AIDS?'] = [(1, 'yes')]
+# ms.storage['Does a CD4-count reflect the strength of a person\'s immune system?'] = [(1, 'yes')]
+# ms.storage['Can HIV be transmitted through a mother\'s breast milk?'] = [(1, 'yes')]
 
 if __name__ == '__main__':
     # run through the system
     client = FakeUSSDClient("msisdn")
+    client.process(ms)
     
-    sk = StateKeeper(client, ms)
-    sk.fast_forward(0)
-    while sk.has_next():
-        sk.next()
     # 
     # # gen = client.process(ms)
     # for args in client.process(ms):

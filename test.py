@@ -3,17 +3,7 @@ from alexandria.core import MenuSystem, prompt
 from alexandria.exceptions import InvalidInputException
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
-from logging.handlers import TimedRotatingFileHandler
 import logging
-
-# setup logging, printing everything will make you cross eyed, trust me
-logger = logging.getLogger()
-logger.name = "alexandria"
-logger.level = logging.DEBUG
-
-handler = TimedRotatingFileHandler("logs/alexandria.log", when='midnight', backupCount=14)
-handler.setFormatter(logging.Formatter('[%(name)s] %(asctime)s %(levelname)s %(message)s'))
-logger.addHandler(handler)
 
 # items can be grouped together and referred to on the fly
 get_personal_info = [
@@ -56,11 +46,11 @@ menu_system \
 #         idx += 1
 
 if __name__ == '__main__':
-    logger.info(" " * 80)
-    logger.info("*" * 80)
-    logger.info("STARTING MENU")
-    logger.info("*" * 80)
-    logger.info(" " * 80)
+    logging.info(" " * 80)
+    logging.info("*" * 80)
+    logging.info("STARTING MENU")
+    logging.info("*" * 80)
+    logging.info(" " * 80)
 
     client = FakeUSSDClient('27764493806')
     client.process(menu_system)
@@ -94,10 +84,10 @@ if __name__ == '__main__':
     #         else:
     #             logging.debug('no next item to ask question, end of menu reached')
     #     except InvalidInputException, e:
-    #         logger.exception(e)
+    #         logging.exception(e)
     #         current_item = menu_system.repeat_current_item()
     #         repeated_question = current_item.next()
-    #         logger.debug('repeating current question: %s' % repeated_question)
+    #         logging.debug('repeating current question: %s' % repeated_question)
     #         client.send(repeated_question)
 
     print table("Menu System state", menu_system.storage.items())

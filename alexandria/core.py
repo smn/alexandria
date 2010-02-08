@@ -5,7 +5,17 @@ from contextlib import contextmanager
 from generator_tools.copygenerators import copy_generator
 import types
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import copy
+
+# setup logging, printing everything will make you cross eyed, trust me
+logger = logging.getLogger()
+logger.name = "alexandria"
+logger.level = logging.DEBUG
+
+handler = TimedRotatingFileHandler("logs/alexandria.log", when='midnight', backupCount=14)
+handler.setFormatter(logging.Formatter('[%(name)s] %(asctime)s %(levelname)s %(message)s'))
+logger.addHandler(handler)
 
 class MenuSystem(object):
     def __init__(self):
@@ -62,9 +72,8 @@ class MenuSystem(object):
 # @coroutine
 def prompt(text, validator=always_true, options=()):
     while True:
-        # yield question
+        ms = yield
         yield msg(text, options)
-        
         # wait for answer
         answer = yield
         yield validator(answer, options)

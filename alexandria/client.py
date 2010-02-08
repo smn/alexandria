@@ -4,13 +4,16 @@ import logging
 
 class Client(object):
     
-    def answer(self, answer, item):
-        question = item.next() # re-read the question asked
+    def answer(self, answer, item, menu_system):
+        item.next()
+        question = item.send(menu_system)
+        # question = item.next() # re-read the question asked
         item.next() # proceed to answer, feed manually
         return question, item.send(answer)
         
-    def ask(self, item):
-        question = item.next() # read question
+    def ask(self, item, menu_system):
+        item.next()
+        question = item.send(menu_system)
         return question, self.send(question)
     
     def step(self, current_item, next_item, menu_system):
@@ -18,20 +21,21 @@ class Client(object):
         answer = self.receive()
         try:
             if current_item:
-                question, validated_answer = self.answer(answer, current_item)
+                question, validated_answer = self.answer(answer, current_item, menu_system)
                 menu_system.store(question, validated_answer)
             else:
                 logging.debug('no current item to answer to')
             
             if next_item:
-                self.ask(next_item)
+                self.ask(next_item, menu_system)
             else:
                 logging.debug('no next item to ask question, end of menu reached')
             
         except InvalidInputException, e:
             logging.exception(e)
             repeat_item = menu_system.repeat_current_item()
-            repeated_question = repeat_item.next()
+            repeat_item.next()
+            repeated_question = repeat_item.send(menu_system)
             logging.debug('repeating current question: %s' % repeated_question)
             self.send(repeated_question)
     
