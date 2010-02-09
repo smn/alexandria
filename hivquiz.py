@@ -1,8 +1,9 @@
-from alexandria.client import FakeUSSDClient
+from alexandria.client import FakeUSSDClient, NothingToDoException
 from alexandria.exceptions import InvalidInputException
 from alexandria.core import MenuSystem, prompt, coroutine
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
+from generator_tools.copygenerators import copy_generator
 
 # allow for lazy ugettext based translation like Django does it
 _ = lambda s: s
@@ -13,36 +14,57 @@ yes_or_no = {
     'validator': pick_one
 }
 
+
+
 # @coroutine
 def pick_first_unanswered(*prompts):
-    # yield question
+    # wait for ms & yield question
     # wait for answer
     # yield validated answer or raise error
     prompts = list(prompts)
-    cloned_prompts = prompts[:]
+    cloned_prompts = map(copy_generator, prompts)
     while True:
         ms = yield
+        print 'pick_first_unanswered: got menu system', ms
         while cloned_prompts:
             prompt = cloned_prompts.pop()
-            question = prompt.next()
-            # unfortunately we have the question as the full text here
-            # and we're only storing the message (without options) in the 
-            # key/value store, little clumsy but it works for now
-            if question not in ms.store:
-                answer = yield question
-                yield prompt.send(answer)
+            prompt.next()
+            question = prompt.send(ms)
+            if question not in ms.storage:
+                print 'pick_first_unanswered, yielding question'
+                yield question
+                answer = yield
+                print 'pick_first_unanswered, got answer', answer
+                prompt.next()
+                validated_answer = prompt.send(answer)
+                print 'validated answer', validated_answer
+                yield validated_answer
+                
 
 
 # @coroutine
 def test(test_fn, *prompts):
-    prompts = list(prompts)
+    prompts = map(copy_generator, prompts)
     while True:
         ms = yield
+        print 'test: got ms', ms
         if test_fn(ms):
+            print 'hmmmm'
             prompt = prompts.pop()
+            print 'test: prompt', prompt
+            prompt.next()
             question = prompt.send(ms)
-            answer = yield question
-            yield prompt.send(answer)
+            print 'test: question', question
+            yield question
+            answer = yield
+            print 'test: answer', answer
+            prompt.next()
+            validated_answer = prompt.send(answer)
+            print 'test: validated_answer', validated_answer
+            yield validated_answer
+        else:
+            print 'test: %s failed!' % test_fn
+            raise NothingToDoException
     
 
 
@@ -81,10 +103,10 @@ ms \
         )
     ) \
     .do(
-        test(lambda ms: len(ms.store) == 10, prompt(_('Thank you you\'ve answered all questions!')))
+        test(lambda ms: len(ms.storage) == 10, prompt(_('Thank you you\'ve answered all questions!')))
     ) \
     .do(
-        test(lambda ms: len(ms.store) < 10, prompt(_('Dial in again to answer the remaining questions')))
+        test(lambda ms: len(ms.storage) < 10, prompt(_('Dial in again to answer the remaining questions')))
     ) \
     .do(
         prompt(_('For more information about HIV/AIDS please phone the Aids '+
@@ -117,4 +139,4 @@ if __name__ == '__main__':
     #     # print 'question: %s, answer: %s' % (question, answer)
 
     # print summary
-    print '\n\n' + table('Current state', ms.store.items()) + '\n\n'
+    print '\n\n' + table('Current state', ms.storage.items()) + '\n\n'

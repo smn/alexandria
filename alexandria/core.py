@@ -72,10 +72,15 @@ class MenuSystem(object):
 # @coroutine
 def prompt(text, validator=always_true, options=()):
     while True:
+        print 'prompt: waiting for ms'
         ms = yield
+        print 'prompt: got ms', ms
+        print 'prompt: yield question'
         yield msg(text, options)
+        print 'prompt: waiting for answer'
         # wait for answer
         answer = yield
+        print 'prompt: got answer', answer
         yield validator(answer, options)
         # initialize storage as a list if it doesn't exist
         # ms.storage.setdefault(text, [])
