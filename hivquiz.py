@@ -1,4 +1,4 @@
-from alexandria.client import FakeUSSDClient, NothingToDoException
+from alexandria.client import FakeUSSDClient
 from alexandria.exceptions import InvalidInputException
 from alexandria.core import MenuSystem, prompt, coroutine
 from alexandria.utils import shuffle, table
@@ -42,6 +42,21 @@ def pick_first_unanswered(*prompts):
                 
 
 
+def case(*cases):
+    while True:
+        ms = yield
+        for test, prompt in cases:
+            if test(ms):
+                prompt = copy_generator(prompt)
+                prompt.next()
+                question = prompt.send(ms)
+                yield question
+                answer = yield
+                prompt.next()
+                validated_answer = prompt.send(answer)
+                yield validated_answer
+
+
 # @coroutine
 def test(test_fn, *prompts):
     prompts = map(copy_generator, prompts)
@@ -64,7 +79,7 @@ def test(test_fn, *prompts):
             yield validated_answer
         else:
             print 'test: %s failed!' % test_fn
-            raise NothingToDoException
+            # raise NothingToDoException
     
 
 
@@ -103,10 +118,10 @@ ms \
         )
     ) \
     .do(
-        test(lambda ms: len(ms.storage) == 10, prompt(_('Thank you you\'ve answered all questions!')))
-    ) \
-    .do(
-        test(lambda ms: len(ms.storage) < 10, prompt(_('Dial in again to answer the remaining questions')))
+        case(
+            (lambda ms: len(ms.storage) == 10, prompt(_('Thank you you\'ve answered all questions!'))),
+            (lambda ms: len(ms.storage) < 10, prompt(_('Dial in again to answer the remaining questions'))),
+        )
     ) \
     .do(
         prompt(_('For more information about HIV/AIDS please phone the Aids '+

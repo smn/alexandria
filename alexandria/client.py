@@ -2,8 +2,6 @@ from alexandria.core import coroutine
 from alexandria.exceptions import InvalidInputException
 import logging
 
-class NothingToDoException(Exception): pass
-
 class Client(object):
     
     def answer(self, answer, item, menu_system):
@@ -47,10 +45,7 @@ class Client(object):
     
     def process(self, menu_system):
         for current_item, next_item in iter(menu_system):
-            try:
-                self.step(current_item, next_item, menu_system)
-            except NothingToDoException, e:
-                pass
+            self.step(current_item, next_item, menu_system)
 
 class FakeUSSDClient(Client):
     

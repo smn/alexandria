@@ -52,6 +52,9 @@ class MenuSystem(object):
         self.__iter_index = self.__iter_index - 1
         return copy_generator(self.stack[self.__iter_index - 1])
     
+    def skip(self):
+        self.__iter_index += 1
+    
     def next(self):
         # return current & next items
         if self.__iter_index > len(self.stack):
