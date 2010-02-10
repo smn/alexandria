@@ -76,8 +76,9 @@ class MenuSystem(object):
 def prompt(text, validator=always_true, options=()):
     while True:
         ms = yield
-        yield msg(text, options)
+        question = msg(text, options)
+        yield question
         answer = yield
         validated_answer = validator(answer, options)
-        ms.store(text, validated_answer)
+        ms.store(question, validated_answer)
         yield validated_answer
