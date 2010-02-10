@@ -22,7 +22,6 @@ class Client(object):
         try:
             if current_item:
                 question, validated_answer = self.answer(answer, current_item, menu_system)
-                menu_system.store(question, validated_answer)
             else:
                 logging.debug('no current item to answer to')
             

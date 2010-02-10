@@ -25,19 +25,15 @@ def pick_first_unanswered(*prompts):
     cloned_prompts = map(copy_generator, prompts)
     while True:
         ms = yield
-        print 'pick_first_unanswered: got menu system', ms
         while cloned_prompts:
             prompt = cloned_prompts.pop()
             prompt.next()
             question = prompt.send(ms)
             if question not in ms.storage:
-                print 'pick_first_unanswered, yielding question'
                 yield question
                 answer = yield
-                print 'pick_first_unanswered, got answer', answer
                 prompt.next()
                 validated_answer = prompt.send(answer)
-                print 'validated answer', validated_answer
                 yield validated_answer
                 
 
@@ -57,77 +53,39 @@ def case(*cases):
                 yield validated_answer
 
 
-# @coroutine
-def test(test_fn, *prompts):
-    prompts = map(copy_generator, prompts)
-    while True:
-        ms = yield
-        print 'test: got ms', ms
-        if test_fn(ms):
-            print 'hmmmm'
-            prompt = prompts.pop()
-            print 'test: prompt', prompt
-            prompt.next()
-            question = prompt.send(ms)
-            print 'test: question', question
-            yield question
-            answer = yield
-            print 'test: answer', answer
-            prompt.next()
-            validated_answer = prompt.send(answer)
-            print 'test: validated_answer', validated_answer
-            yield validated_answer
-        else:
-            print 'test: %s failed!' % test_fn
-            # raise NothingToDoException
-    
-
-
-ms = MenuSystem()
-ms \
-    .do(
-        prompt('Thnx 4 taking the Quiz! Answer 3 questions and see how much you know. '
-                'Pick your language:', options=(
-            'English',
-            'Zulu',
-            'Afrikaans',
-            'Sotho',
-        ), validator=pick_one),
-        prompt(_('You will be asked to answer 3 questions regarding HIV. '
-            'Answer them correctly and stand a chance to win airtime!'
-        ))
-    ) \
-    .do(
-        pick_first_unanswered(
-            prompt(_('Can traditional medicine cure HIV/AIDS?'), **yes_or_no),
-            prompt(_('Is an HIV test at any government clinic free of charge?'), **yes_or_no),
-            prompt(_('Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'), **yes_or_no),
-        )
-    ) \
-    .do(
-        pick_first_unanswered(
-            prompt(_('Can HIV be transmitted by sweat?'), **yes_or_no),
-            prompt(_('Is there a herbal medication that can cure HIV/AIDS?'), **yes_or_no),
-            prompt(_('Does a CD4-count reflect the strength of a person\'s immune system?'), **yes_or_no),
-        )
-    ) \
-    .do(
-        pick_first_unanswered(
-            prompt(_('Can HIV be transmitted through a mother\'s breast milk?'), **yes_or_no),
-            prompt(_('Is it possible for an HIV positive woman to deliver an HIV negative baby?'), **yes_or_no)
-        )
-    ) \
-    .do(
-        case(
-            (lambda ms: len(ms.storage) == 10, prompt(_('Thank you you\'ve answered all questions!'))),
-            (lambda ms: len(ms.storage) < 10, prompt(_('Dial in again to answer the remaining questions'))),
-        )
-    ) \
-    .do(
-        prompt(_('For more information about HIV/AIDS please phone the Aids '+
-                    'Helpline on 0800012322.  This is a free call from a landline. '+
-                    'Normal cell phone rates apply.'))
-    )
+ms = MenuSystem(
+    prompt('Thnx 4 taking the Quiz! Answer 3 questions and see how much you know. '
+            'Pick your language:', options=(
+        'English',
+        'Zulu',
+        'Afrikaans',
+        'Sotho',
+    ), validator=pick_one),
+    prompt(_('You will be asked to answer 3 questions regarding HIV. '
+        'Answer them correctly and stand a chance to win airtime!'
+    )),
+    pick_first_unanswered(
+        prompt(_('Can traditional medicine cure HIV/AIDS?'), **yes_or_no),
+        prompt(_('Is an HIV test at any government clinic free of charge?'), **yes_or_no),
+        prompt(_('Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'), **yes_or_no),
+    ),
+    pick_first_unanswered(
+        prompt(_('Can HIV be transmitted by sweat?'), **yes_or_no),
+        prompt(_('Is there a herbal medication that can cure HIV/AIDS?'), **yes_or_no),
+        prompt(_('Does a CD4-count reflect the strength of a person\'s immune system?'), **yes_or_no),
+    ),
+    pick_first_unanswered(
+        prompt(_('Can HIV be transmitted through a mother\'s breast milk?'), **yes_or_no),
+        prompt(_('Is it possible for an HIV positive woman to deliver an HIV negative baby?'), **yes_or_no)
+    ),
+    case(
+        (lambda ms: len(ms.storage) == 10, prompt(_('Thank you you\'ve answered all questions!'))),
+        (lambda ms: len(ms.storage) < 10, prompt(_('Dial in again to answer the remaining questions'))),
+    ),
+    prompt(_('For more information about HIV/AIDS please phone the Aids '+
+                'Helpline on 0800012322.  This is a free call from a landline. '+
+                'Normal cell phone rates apply.'))
+)
 
 # # prepopulate answers for testing
 # ms.fast_forward()

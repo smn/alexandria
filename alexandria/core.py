@@ -18,9 +18,9 @@ handler.setFormatter(logging.Formatter('[%(name)s] %(asctime)s %(levelname)s %(m
 logger.addHandler(handler)
 
 class MenuSystem(object):
-    def __init__(self):
+    def __init__(self, *items):
         # a list of items to work through in this menu
-        self.stack = []
+        self.stack = list(items)
         self.storage = {}
         self.__iter_index = 0
     
@@ -36,7 +36,7 @@ class MenuSystem(object):
     def store(self, key, value):
         self.storage.setdefault(key, []).append(value)
     
-    def do(self, *items):
+    def append(self, *items):
         """Clone the stack and append a batch of items to it"""
         clone = self.clone()
         clone.stack.extend(list(items))
@@ -75,17 +75,9 @@ class MenuSystem(object):
 # @coroutine
 def prompt(text, validator=always_true, options=()):
     while True:
-        print 'prompt: waiting for ms'
         ms = yield
-        print 'prompt: got ms', ms
-        print 'prompt: yield question'
         yield msg(text, options)
-        print 'prompt: waiting for answer'
-        # wait for answer
         answer = yield
-        print 'prompt: got answer', answer
-        yield validator(answer, options)
-        # initialize storage as a list if it doesn't exist
-        # ms.storage.setdefault(text, [])
-        # ms.storage[text].append(validated_answer)
-        # yield validated_answer
+        validated_answer = validator(answer, options)
+        ms.store(text, validated_answer)
+        yield validated_answer
