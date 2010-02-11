@@ -2,7 +2,32 @@ from alexandria.core import coroutine
 from alexandria.exceptions import InvalidInputException
 import logging
 
+# store state in client
+# serialize state only
+# state has slots for previous question (pending an answer)
+# answer always fills in the slot - allows us to skip questions that
+# appear to be irrelevant as we progress through the menu
+
 class Client(object):
+    
+    def __init__(self, client_id):
+        """
+        Should go something like so:
+        
+        >>> from collections import namedtuple
+        >>> Menu = namedtuple('Menu',['question','answer'])
+        >>> menu = Menu._make('What is your name?', '')
+        >>> fuc = FakeUSSDClient('1')
+        >>> fuc.send(menu)
+        -> what is your name?
+        <- Simon
+        >>> m.answer
+        'Simon'
+        
+        """
+        self.state = {}
+        self.client_id = client_id
+        self.response = ''
     
     def answer(self, answer, item, menu_system):
         item.next()
@@ -47,24 +72,6 @@ class Client(object):
             self.step(current_item, next_item, menu_system)
 
 class FakeUSSDClient(Client):
-    
-    def __init__(self, client_id):
-        """
-        Should go something like so:
-        
-        >>> from collections import namedtuple
-        >>> Menu = namedtuple('Menu',['question','answer'])
-        >>> menu = Menu._make('What is your name?', '')
-        >>> fuc = FakeUSSDClient('1')
-        >>> fuc.send(menu)
-        -> what is your name?
-        <- Simon
-        >>> m.answer
-        'Simon'
-        
-        """
-        self.client_id = client_id
-        self.response = ''
     
     def connect(self, menu_system):
         pass

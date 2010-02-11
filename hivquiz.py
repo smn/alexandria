@@ -18,10 +18,6 @@ yes_or_no = {
 
 # @coroutine
 def pick_first_unanswered(*prompts):
-    # wait for ms & yield question
-    # wait for answer
-    # yield validated answer or raise error
-    prompts = list(prompts)
     cloned_prompts = map(copy_generator, prompts)
     while True:
         ms = yield
@@ -54,7 +50,7 @@ def case(*cases):
                 prompt.next()
                 validated_answer = prompt.send(answer)
                 yield validated_answer
-
+        raise AlexandriaException, 'no valid case found'
 
 ms = MenuSystem(
     prompt('Thnx 4 taking the Quiz! Answer 3 questions and see how much you know. '
