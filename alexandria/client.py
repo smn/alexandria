@@ -11,21 +11,9 @@ import logging
 class Client(object):
     
     def __init__(self, client_id):
-        """
-        Should go something like so:
-        
-        >>> from collections import namedtuple
-        >>> Menu = namedtuple('Menu',['question','answer'])
-        >>> menu = Menu._make('What is your name?', '')
-        >>> fuc = FakeUSSDClient('1')
-        >>> fuc.send(menu)
-        -> what is your name?
-        <- Simon
-        >>> m.answer
-        'Simon'
-        
-        """
-        self.state = {}
+        self.state = {
+            "expecting": None,
+        }
         self.client_id = client_id
         self.response = ''
     
@@ -41,20 +29,60 @@ class Client(object):
         question = item.send(menu_system)
         return question, self.send(question)
     
-    def step(self, current_item, next_item, menu_system):
+    def get_previously_sent_item(self, menu_system):
+        previous_index = self.state['expecting']
+        # we can't check for just previous_index, since zero resolves to False 
+        # in an if statement
+        if previous_index >= 0: 
+            return menu_system.stack[previous_index]
+    
+    def step(self, index, item, menu_system):
         # receive answer and pass it to the last question that was asked
+        
+        # drop current, next iterator
+        # go for only next iterator
+        # keep track of last item
+        # answer back to last item
+        # provide next item
+        # items that do nothing should yield False
+        
+        ##### RECEIVE INPUT
+        
+        # to make this non-blocking this will probably need to go elsewhere
         answer = self.receive()
+        
+        # check what item was sent previously
         try:
-            if current_item:
-                question, validated_answer = self.answer(answer, current_item, menu_system)
-            else:
-                logging.debug('no current item to answer to')
+            item_awaiting_answer = self.get_previously_sent_item(menu_system)
+            if item_awaiting_answer:
+                # if this is the case it means we're at the start of a session
+                # with a client. We're assuming that the client always initiates
+                # the conversation - which is the case with USSD
             
-            if next_item:
-                self.ask(next_item, menu_system)
+                question, validated_answer = \
+                            self.answer(answer, item_awaiting_answer, menu_system)
             else:
-                logging.debug('no next item to ask question, end of menu reached')
+                logging.debug('client initiated contact with: %s' % answer)
+        
+            ###### SEND OUTPUT
+        
+            while item:
+                # iterate
+                # index, item = menu_system.next()
             
+                # start coroutine
+                item.next() 
+                # send the menu system, yields the question
+                question = item.send(menu_system) 
+                # coroutines may return empty or False values which means they have
+                # nothing to ask the client
+                if question: 
+                    self.send(question)
+                    self.state['expecting'] = index
+                    break # break out of ugly while True: loop
+                else:
+                    index, item = menu_system.next()
+                
         except InvalidInputException, e:
             logging.exception(e)
             repeat_item = menu_system.repeat_current_item()
@@ -62,14 +90,43 @@ class Client(object):
             repeated_question = repeat_item.send(menu_system)
             logging.debug('repeating current question: %s' % repeated_question)
             self.send(repeated_question)
+            
+        # try:
+        #     
+        #     if item_awaiting_answer:
+        #         question, validated_answer = self.answer(answer, item_awaiting_answer, menu_system)
+        #     else:
+        #         logging.debug('no current item to answer to')
+        #     
+        #     if next_item:
+        #         # self.ask(next_item, menu_system)
+        #         while True:
+        #             index, current_item, next_item = menu_system.next()
+        #             next_item.next()
+        #             question = next_item.send(menu_system)
+        #             if question:
+        #                 self.send(question)
+        #                 self.state['expecting'] = index # keep track of what question
+        #                                                 # was asked last
+        #                 break
+        #     else:
+        #         logging.debug('no next item to ask question, end of menu reached')
+        #     
+        # except InvalidInputException, e:
+        #     logging.exception(e)
+        #     repeat_item = menu_system.repeat_current_item()
+        #     repeat_item.next()
+        #     repeated_question = repeat_item.send(menu_system)
+        #     logging.debug('repeating current question: %s' % repeated_question)
+        #     self.send(repeated_question)
     
     def do_step(self, step, menu_system):
         menu_system.fast_forward(step)
         self.step(*menu_system.next())
     
     def process(self, menu_system):
-        for current_item, next_item in iter(menu_system):
-            self.step(current_item, next_item, menu_system)
+        for index, item in iter(menu_system):
+            self.step(index, item, menu_system)
 
 class FakeUSSDClient(Client):
     

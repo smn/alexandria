@@ -4,6 +4,7 @@ from alexandria.core import MenuSystem, prompt, coroutine
 from alexandria.utils import shuffle, table
 from alexandria.validators import non_empty_string, integer, pick_one
 from generator_tools.copygenerators import copy_generator
+import logging
 
 # allow for lazy ugettext based translation like Django does it
 _ = lambda s: s
@@ -32,7 +33,7 @@ def pick_first_unanswered(*prompts):
                 validated_answer = prompt.send(answer)
                 yield validated_answer
             else:
-                print 'already handled question', question
+                logging.debug('%s already handled question %s' % (client, question))
         yield False
                 
 
@@ -51,6 +52,14 @@ def case(*cases):
                 validated_answer = prompt.send(answer)
                 yield validated_answer
         raise AlexandriaException, 'no valid case found'
+
+
+def all_questions_answered(menu_system):
+    return len(menu_system.storage) == 10
+
+def more_questions_left(menu_system):
+    return not all_questions_answered(menu_system)
+
 
 ms = MenuSystem(
     prompt('Thnx 4 taking the Quiz! Answer 3 questions and see how much you know. '
@@ -78,8 +87,8 @@ ms = MenuSystem(
         prompt(_('Is it possible for an HIV positive woman to deliver an HIV negative baby?'), **yes_or_no)
     ),
     case(
-        (lambda ms: len(ms.storage) == 10, prompt(_('Thank you you\'ve answered all questions!'))),
-        (lambda ms: len(ms.storage) < 10, prompt(_('Dial in again to answer the remaining questions'))),
+        (all_questions_answered, prompt(_('Thank you you\'ve answered all questions!'))),
+        (more_questions_left, prompt(_('Dial in again to answer the remaining questions'))),
     ),
     prompt(_('For more information about HIV/AIDS please phone the Aids '+
                 'Helpline on 0800012322.  This is a free call from a landline. '+
@@ -88,15 +97,15 @@ ms = MenuSystem(
 
 # # prepopulate answers for testing
 # ms.fast_forward()
-ms.storage['Can traditional medicine cure HIV/AIDS?'] = [(1, 'yes')]
-ms.storage['Is an HIV test at any government clinic free of charge?'] = [(1, 'yes')]
-ms.storage['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [(1, 'yes')]
-ms.storage['Can HIV be transmitted by sweat?'] = [(1, 'yes')]
-ms.storage['Is there a herbal medication that can cure HIV/AIDS?'] = [(1, 'yes')]
-ms.storage['Does a CD4-count reflect the strength of a person\'s immune system?'] = [(1, 'yes')]
-ms.storage['Can HIV be transmitted through a mother\'s breast milk?'] = [(1, 'yes')]
+# ms.storage['Can traditional medicine cure HIV/AIDS?'] = [(1, 'yes')]
+# ms.storage['Is an HIV test at any government clinic free of charge?'] = [(1, 'yes')]
+# ms.storage['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [(1, 'yes')]
+# ms.storage['Can HIV be transmitted by sweat?'] = [(1, 'yes')]
+# ms.storage['Is there a herbal medication that can cure HIV/AIDS?'] = [(1, 'yes')]
+# ms.storage['Does a CD4-count reflect the strength of a person\'s immune system?'] = [(1, 'yes')]
+# ms.storage['Can HIV be transmitted through a mother\'s breast milk?'] = [(1, 'yes')]
 
-print table('Stored state', ms.storage.items())
+# print table('Stored state', ms.storage.items())
 
 if __name__ == '__main__':
     # run through the system
