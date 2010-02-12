@@ -12,8 +12,6 @@ TRUTEQ_PORT = int(os.environ['TRUTEQ_PORT'])
 TRUTEQ_USERNAME = os.environ['TRUTEQ_USERNAME']
 TRUTEQ_PASSWORD = os.environ['TRUTEQ_PASSWORD']
 
-print TRUTEQ_HOSTNAME, TRUTEQ_PORT, TRUTEQ_USERNAME, TRUTEQ_PASSWORD
-
 def app_register(ssmi_protocol):
     SSMIService(ms, TRUTEQ_USERNAME, TRUTEQ_PASSWORD) \
                         .register_ssmi(ssmi_protocol)
