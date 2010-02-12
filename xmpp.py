@@ -4,7 +4,7 @@ from twisted.words.protocols.jabber.jid import JID
 from wokkel import client, xmppim
 
 jid = JID("s.dehaan@gmail.com")
-password = 'pu98sdh'
+password = '*******'
 
 application = service.Application('XMPP client')
 xmppClient = client.XMPPClient(jid, password, host='talk.google.com')
