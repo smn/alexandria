@@ -1,41 +1,19 @@
 from alexandria.core import coroutine
+from alexandria.client import Client
+from hivquiz import ms
 from ssmi.client import (SSMI_USSD_TYPE_NEW, SSMI_USSD_TYPE_EXISTING, 
                             SSMI_USSD_TYPE_END, SSMI_USSD_TYPE_TIMEOUT)
 
-class SSMIClient(object):
+class SSMIClient(Client):
+    
     def __init__(self, msisdn, ssmi_client):
-        self.msisdn = msisdn
         self.ssmi_client = ssmi_client
         self.store = {}
-        self.step = 0
-        self.previous_answer = ''
-        self.waiting_for_answer = False
+        super(self, SSMIClient).__init__(msisdn)
     
-    def process(self, menu_system):
-        for step, coroutine, question in menu_system.run(start_at=self.step):
-            # question might be None if for some reason the coroutine turns
-            # out not to need any user info
-            if question:
-                answer = yield self.connection().send(question)
-                print 'got answer', answer
-                validated_answer = coroutine.send(answer)
-                yield step, coroutine, question, validated_answer
-            else:
-                yield step, coroutine, question, None
-
-
-    @coroutine
-    def connection(self):
-        while True:
-            output = yield
-            print 'sending to phone:', output
-            self.ssmi_client.send_ussd(output, self.msisdn)
-            self.waiting_for_answer = True
-            print 'waiting for answer from phone, yielding'
-            response = (yield)
-            print 'got response', response
-            yield response
-            self.waiting_for_answer = False
+    def send(self, text):
+        return self.ssmi_client.send_ussd(self.id, text)
+    
     
 
 class SSMIService(object):
@@ -45,47 +23,36 @@ class SSMIService(object):
         self.username = username
         self.password = password
         self.store = {}
+        self.clients = {}
+        self.ms = ms.clone()
     
     def register_ssmi(self, ssmi_protocol):
-        self.client = ssmi_protocol
-        self.client.app_setup(username=self.username, 
+        self.ssmi_client = ssmi_protocol
+        self.ssmi_client.app_setup(username=self.username, 
                                     password=self.password,
                                     ussd_callback=self.process_ussd, 
                                     sms_callback=self.process_sms)
+            
     
     def process_sms(self, *args):
         """Process an SMS message received in reply to an SMS we sent out."""
         pass
     
-    def send_and_yield_with_reply(self, msisdn, msg):
-        self.client.send_ussd(msisdn, msg)
-    
-    def get_client_for(self, msisdn):
-        return self.store.setdefault(msisdn, SSMIClient(msisdn, self.client))
-    
     def new_ussd_session(self, msisdn, message):
-        self.next_step().send((msisdn, message))
+        client = self.clients.setdefault(msisdn, SSMIClient(msisdn, self.ssmi_client))
+        client.answer(message, ms)
     
     def existing_ussd_session(self, msisdn, message):
-        self.next_step().send((msisdn, message))
-    
-    @coroutine
-    def next_step(self):
-        while True:
-            msisdn, message = yield
-            print '>>> %s: %s' % (msisdn, message)
-            client = self.get_client_for(msisdn)
-            if client.waiting_for_answer:
-                print "received message from client", message
-                client.connection().send(message)
-            for step, coroutine, question, answer in client.process(self.menu_system):
-                client.step = step + 1
+        client = self.clients[msisdn]
+        client.answer(message, ms)
     
     def timed_out_ussd_session(self, msisdn, message):
-        print msisdn, 'timed out'
+        logging.debug('%s timed out' % msisdn)
+        self.clients.remove(msisdn)
     
     def end_ussd_session(self, msisdn, message):
-        print msisdn, 'ended with message', message
+        logging.debug('%s ended the session' % msisdn)
+        self.clients.remove(msisdn)
     
     def process_ussd(self, msisdn, ussd_type, ussd_phase, message):
         if self.client is None:
