@@ -49,25 +49,23 @@ class MenuSystem(object):
         self.__iter_index = index
     
     def repeat_current_item(self):
-        self.__iter_index = self.__iter_index - 1
-        current_index = self.__iter_index - 1
-        return current_index, copy_generator(self.stack[current_index])
+        self.fast_forward(self.__iter_index - 1)
+        return self.next()
     
-    def skip(self):
-        self.__iter_index += 1
+    def next_after(self, index):
+        self.fast_forward(index)
+        return self.next()
     
     def next(self):
         if self.__iter_index > len(self.stack):
             raise StopIteration
         
-        self.__iter_index += 1
-        current_index = self.__iter_index - 1
-        
-        if current_index == len(self.stack):
+        if self.__iter_index == len(self.stack):
             next_item = None
         else:
-            next_item = copy_generator(self.stack[current_index])
-        return current_index, next_item
+            next_item = copy_generator(self.stack[self.__iter_index])
+        self.__iter_index += 1
+        return self.__iter_index, next_item
 
 
 # @coroutine

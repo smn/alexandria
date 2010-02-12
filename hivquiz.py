@@ -33,7 +33,7 @@ def pick_first_unanswered(*prompts):
                 validated_answer = prompt.send(answer)
                 yield validated_answer
             else:
-                logging.debug('%s already handled question %s' % (client, question))
+                logging.debug('already handled question %s' % question)
         yield False
                 
 
