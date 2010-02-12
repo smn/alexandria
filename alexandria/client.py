@@ -1,5 +1,6 @@
 from alexandria.core import coroutine
 from alexandria.exceptions import InvalidInputException
+from generator_tools.copygenerators import copy_generator
 import logging
 
 # store state in client
@@ -34,7 +35,7 @@ class Client(object):
         # we can't check for just previous_index, since zero resolves to False 
         # in an if statement
         if previous_index >= 0: 
-            return menu_system.stack[previous_index]
+            return copy_generator(menu_system.stack[previous_index])
     
     def step(self, index, item, menu_system):
         # receive answer and pass it to the last question that was asked
@@ -85,9 +86,10 @@ class Client(object):
                 
         except InvalidInputException, e:
             logging.exception(e)
-            repeat_item = menu_system.repeat_current_item()
+            index, repeat_item = menu_system.repeat_current_item()
             repeat_item.next()
             repeated_question = repeat_item.send(menu_system)
+            self.state['expecting'] = index
             logging.debug('repeating current question: %s' % repeated_question)
             self.send(repeated_question)
             

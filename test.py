@@ -14,8 +14,8 @@ get_personal_info = [
 
 menu_system = MenuSystem()
 menu_system \
-    .do(*get_personal_info) \
-    .do(
+    .append(*get_personal_info) \
+    .append(
         # items can be added as arguments to do
         prompt('This is your inbox:', options=(
             'Message 1',
@@ -23,7 +23,7 @@ menu_system \
             'Message 3',
         ), validator=pick_one)
     ) \
-    .do(
+    .append(
         # present items in random order
         *shuffle(
             prompt('How old are you?', validator=integer),
