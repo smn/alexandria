@@ -13,9 +13,9 @@ xmppClient = client.XMPPClient(jid, password, host='talk.google.com')
 xmppClient.logTraffic = True
 xmppClient.setServiceParent(application)
 
-# presence = xmppim.PresenceClientProtocol()
-# presence.setHandlerParent(xmppClient)
-# presence.available()
+presence = xmppim.PresenceClientProtocol()
+presence.setHandlerParent(xmppClient)
+presence.available()
 
 from alexandria.client import Client
 from hivquiz import ms
@@ -66,3 +66,4 @@ class MessageHandler(xmppim.MessageProtocol):
     
 message = MessageHandler()
 message.setHandlerParent(xmppClient)
+
