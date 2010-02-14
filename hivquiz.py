@@ -15,9 +15,6 @@ yes_or_no = {
     'validator': pick_one
 }
 
-
-
-# @coroutine
 def pick_first_unanswered(*prompts):
     cloned_prompts = map(copy_generator, prompts)
     while True:
@@ -94,32 +91,3 @@ ms = MenuSystem(
                 'Helpline on 0800012322.  This is a free call from a landline. '+
                 'Normal cell phone rates apply.'))
 )
-
-# # prepopulate answers for testing
-# ms.fast_forward()
-# ms.storage['Can traditional medicine cure HIV/AIDS?'] = [(1, 'yes')]
-# ms.storage['Is an HIV test at any government clinic free of charge?'] = [(1, 'yes')]
-# ms.storage['Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'] = [(1, 'yes')]
-# ms.storage['Can HIV be transmitted by sweat?'] = [(1, 'yes')]
-# ms.storage['Is there a herbal medication that can cure HIV/AIDS?'] = [(1, 'yes')]
-# ms.storage['Does a CD4-count reflect the strength of a person\'s immune system?'] = [(1, 'yes')]
-# ms.storage['Can HIV be transmitted through a mother\'s breast milk?'] = [(1, 'yes')]
-
-# print table('Stored state', ms.storage.items())
-
-if __name__ == '__main__':
-    # run through the system
-    client = FakeUSSDClient("msisdn")
-    client.process(ms)
-    
-    # 
-    # # gen = client.process(ms)
-    # for args in client.process(ms):
-    #     pass
-    #     # print 'client got args', args
-    #     # print args
-    #     # print 'step: %s, coroutine: %s' % (step, coroutine)
-    #     # print 'question: %s, answer: %s' % (question, answer)
-
-    # print summary
-    print '\n\n' + table('Current state', ms.storage.items()) + '\n\n'
