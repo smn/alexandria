@@ -7,7 +7,7 @@ class AlexandriaSSMIClient(Client):
     
     def __init__(self, msisdn, send_callback):
         super(AlexandriaSSMIClient, self).__init__(msisdn)
-        self.msisdn
+        self.msisdn = msisdn
         self.send_callback = send_callback
     
     def send(self, text):
