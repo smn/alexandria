@@ -1,2 +1,2 @@
 #!/bin/bash
-kill -HUP `cat tmp/twistd.pid`
+kill -HUP `cat tmp/twistd.xmpp.pid`

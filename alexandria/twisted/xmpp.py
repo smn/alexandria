@@ -5,7 +5,7 @@ from twisted.python import usage
 from wokkel import client, xmppim
 
 from alexandria.client import Client
-from hivquiz import ms
+from examples.hivquiz import ms
 
 class AlexandriaXMPPClient(Client):
     
@@ -34,7 +34,7 @@ class MessageHandler(xmppim.MessageProtocol):
         if msg["type"] == 'chat' and hasattr(msg, "body"):
             client = self.clients.setdefault(msg['from'], \
                                 AlexandriaXMPPClient(msg['from'], self._reply))
-            client.answer(str(msg.body), ms)
+            client.answer(str(msg.body), self.ms)
     
     def _reply(self, recipient, message):
         reply = domish.Element((None, "message"))

@@ -1,28 +1,24 @@
-from alexandria.core import coroutine
 from alexandria.client import Client
-from hivquiz import ms
+from examples.hivquiz import ms
 from ssmi.client import (SSMI_USSD_TYPE_NEW, SSMI_USSD_TYPE_EXISTING, 
                             SSMI_USSD_TYPE_END, SSMI_USSD_TYPE_TIMEOUT)
 
-class SSMIClient(Client):
+class AlexandriaSSMIClient(Client):
     
-    def __init__(self, msisdn, ssmi_client):
-        self.ssmi_client = ssmi_client
-        self.store = {}
-        super(self, SSMIClient).__init__(msisdn)
+    def __init__(self, msisdn, send_callback):
+        super(AlexandriaSSMIClient, self).__init__(msisdn)
+        self.msisdn
+        self.send_callback = send_callback
     
     def send(self, text):
-        return self.ssmi_client.send_ussd(self.id, text)
-    
+        return self.send_callback(self.msisdn, text)
     
 
 class SSMIService(object):
     """A Service which can be hooked into a Twisted reactor loop"""
-    def __init__(self, menu_system, username, password):
-        self.menu_system = menu_system
+    def __init__(self, username, password):
         self.username = username
         self.password = password
-        self.store = {}
         self.clients = {}
         self.ms = ms.clone()
     
@@ -39,20 +35,21 @@ class SSMIService(object):
         pass
     
     def new_ussd_session(self, msisdn, message):
-        client = self.clients.setdefault(msisdn, SSMIClient(msisdn, self.ssmi_client))
-        client.answer(message, ms)
+        client = self.clients.setdefault(msisdn, \
+                                AlexandriaSSMIClient(msisdn, self.ssmi_client))
+        client.answer(message, self.ms)
     
     def existing_ussd_session(self, msisdn, message):
         client = self.clients[msisdn]
-        client.answer(message, ms)
+        client.answer(message, self.ms)
     
     def timed_out_ussd_session(self, msisdn, message):
-        logging.debug('%s timed out' % msisdn)
-        self.clients.remove(msisdn)
+        logging.debug('%s timed out, removing client' % msisdn)
+        del self.clients[msisdn]
     
     def end_ussd_session(self, msisdn, message):
-        logging.debug('%s ended the session' % msisdn)
-        self.clients.remove(msisdn)
+        logging.debug('%s ended the session, removing client' % msisdn)
+        del self.clients[msisdn]
     
     def process_ussd(self, msisdn, ussd_type, ussd_phase, message):
         if self.client is None:

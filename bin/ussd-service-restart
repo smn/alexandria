@@ -1,0 +1,2 @@
+#!/bin/bash
+bin/ussd-service-stop && bin/ussd-service-start

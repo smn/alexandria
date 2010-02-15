@@ -1,0 +1,2 @@
+#!/bin/bash
+twistd --logfile=logs/twistd.ussd.log --pidfile=tmp/twistd.ussd.pid ussd

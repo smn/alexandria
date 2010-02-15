@@ -1,2 +1,2 @@
 #!/bin/bash
-twistd --logfile=logs/twistd.log --pidfile=tmp/twistd.pid xmpp -u $1
+twistd --logfile=logs/twistd.xmpp.log --pidfile=tmp/twistd.xmpp.pid xmpp -u $1
