@@ -9,7 +9,7 @@ from alexandria.twisted.xmpp import XMPPClient
 class Options(usage.Options):
     optParameters = [
         ["username", "u", None, "XMPP username."],
-        ["password", "p", None, "XMPP password."],
+        ["password", "p", '', "XMPP password."],
         ["host", "h", 'talk.google.com', "XMPP host."],
         ["port", None, 5222, "XMPP host's port."],
     ]
@@ -22,6 +22,8 @@ class XMPPServiceMaker(object):
     options = Options
     
     def makeService(self, options):
+        if 'p' not in options:
+            options['password'] = raw_input('password for %s: ' % options['username'])
         return XMPPClient(**options)
 
 serviceMaker = XMPPServiceMaker()

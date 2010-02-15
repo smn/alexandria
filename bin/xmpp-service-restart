@@ -1,2 +1,2 @@
 #!/bin/bash
-bin/xmpp-service-stop && bin/xmpp-service-start $1 $2
+bin/xmpp-service-stop && bin/xmpp-service-start $1
