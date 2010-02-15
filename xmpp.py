@@ -1,15 +1,18 @@
 from twisted.application import service
 from twisted.words.xish import domish
 from twisted.words.protocols.jabber.jid import JID
+from twisted.python import usage
 from wokkel import client, xmppim
-
 import sys
 
-jid = JID(sys.argv[1])
-password = sys.argv[2]
+username = raw_input('username: ')
+password = raw_input('password: ')
+
+jid = JID(username)
 
 application = service.Application('XMPP client')
-xmppClient = client.XMPPClient(jid, password, host='talk.google.com')
+xmppClient = client.XMPPClient(jid, password, \
+                                    host='talk.google.com')
 xmppClient.logTraffic = True
 xmppClient.setServiceParent(application)
 
