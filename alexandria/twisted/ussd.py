@@ -52,7 +52,7 @@ class SSMIService(object):
         del self.clients[msisdn]
     
     def process_ussd(self, msisdn, ussd_type, ussd_phase, message):
-        if self.client is None:
+        if self.ssmi_client is None:
             log.err('FATAL: client not registered')
             return
         
