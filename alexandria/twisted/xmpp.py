@@ -44,12 +44,65 @@ class MessageHandler(xmppim.MessageProtocol):
         return self.send(reply)
     
 
+
+class PresenceHandler(xmppim.PresenceProtocol):
+    
+    def subscribeReceived(self, presence):
+        """
+        Subscription request was received.
+
+        Always grant permission to see our presence.
+        """
+        self.subscribed(recipient=presence.sender,
+                        sender=presence.recipient)
+        self.available(recipient=presence.sender,
+                       status=u"I'm here",
+                       sender=presence.recipient)
+    
+    def unsubscribeReceived(self, presence):
+       """
+       Unsubscription request was received.
+
+       Always confirm unsubscription requests.
+       """
+       self.unsubscribed(recipient=presence.sender,
+                         sender=presence.recipient)
+    
+    def probeReceived(self, presence):
+         """
+         A presence probe was received.
+
+         Always send available presence to whoever is asking.
+         """
+         self.available(recipient=presence.sender,
+                        status=u"I'm here",
+                        sender=presence.recipient)
+
+
+class RosterHandler(xmppim.RosterClientProtocol):
+    
+    def onRosterSet(self, item):
+        print item
+    
+    def onRosterRemove(self, entity):
+        print entity
+    
+
 class XMPPClient(client.XMPPClient):
     
     def __init__(self, username, password, host, port):
         super(XMPPClient, self).__init__(JID(username), password, host, port)
-        # self.logTraffic = True
+        self.logTraffic = True
+        
+        # trying to figure out how to automatically accept new buddy
+        # authorization requests, failing atm
+        presence_handler = PresenceHandler()
+        presence_handler.setHandlerParent(self)
+        
+        roster_handler = RosterHandler()
+        roster_handler.setHandlerParent(self)
         
         message_handler = MessageHandler()
         message_handler.setHandlerParent(self)
+        
     
