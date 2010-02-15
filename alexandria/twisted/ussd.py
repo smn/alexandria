@@ -1,5 +1,6 @@
 from alexandria.client import Client
 from examples.hivquiz import ms
+import logging
 from ssmi.client import (SSMI_USSD_TYPE_NEW, SSMI_USSD_TYPE_EXISTING, 
                             SSMI_USSD_TYPE_END, SSMI_USSD_TYPE_TIMEOUT)
 
@@ -30,13 +31,16 @@ class SSMIService(object):
                                     sms_callback=self.process_sms)
             
     
+    def reply(self, msisdn, text):
+        return self.ssmi_client.send_ussd(msisdn, text)
+    
     def process_sms(self, *args):
         """Process an SMS message received in reply to an SMS we sent out."""
         pass
     
     def new_ussd_session(self, msisdn, message):
         client = self.clients.setdefault(msisdn, \
-                                AlexandriaSSMIClient(msisdn, self.ssmi_client))
+                                AlexandriaSSMIClient(msisdn, self.reply))
         client.answer(message, self.ms)
     
     def existing_ussd_session(self, msisdn, message):
