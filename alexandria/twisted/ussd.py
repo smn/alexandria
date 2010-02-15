@@ -39,8 +39,8 @@ class SSMIService(object):
         pass
     
     def new_ussd_session(self, msisdn, message):
-        client = self.clients.setdefault(msisdn, \
-                                AlexandriaSSMIClient(msisdn, self.reply))
+        client = AlexandriaSSMIClient(msisdn, self.reply)
+        self.clients[msisdn] = client
         client.answer(message, self.ms)
     
     def existing_ussd_session(self, msisdn, message):

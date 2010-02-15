@@ -67,7 +67,7 @@ ms = MenuSystem(
         'Sotho',
     ), validator=pick_one),
     prompt(_('You will be asked to answer 3 questions regarding HIV. '
-        'Answer them correctly and stand a chance to win airtime!'
+        'Answer them correctly and stand a chance to win airtime! Press 1 to continue.'
     )),
     pick_first_unanswered(
         prompt(_('Can traditional medicine cure HIV/AIDS?'), **yes_or_no),
@@ -84,8 +84,8 @@ ms = MenuSystem(
         prompt(_('Is it possible for an HIV positive woman to deliver an HIV negative baby?'), **yes_or_no)
     ),
     case(
-        (all_questions_answered, prompt(_('Thank you you\'ve answered all questions!'))),
-        (more_questions_left, prompt(_('Dial in again to answer the remaining questions'))),
+        (all_questions_answered, prompt(_('Thank you you\'ve answered all questions! Press 1 to continue.'))),
+        (more_questions_left, prompt(_('Dial in again to answer the remaining questions Press 1 to continue.'))),
     ),
     prompt(_('For more information about HIV/AIDS please phone the Aids '+
                 'Helpline on 0800012322.  This is a free call from a landline. '+
