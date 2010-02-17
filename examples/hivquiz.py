@@ -1,8 +1,6 @@
-from alexandria.client import FakeUSSDClient
-from alexandria.exceptions import InvalidInputException
-from alexandria.core import MenuSystem, prompt, coroutine
+from alexandria.core import MenuSystem, prompt
 from alexandria.utils import shuffle, table
-from alexandria.validators import non_empty_string, integer, pick_one
+from alexandria.validators import pick_one
 from generator_tools.copygenerators import copy_generator
 import logging
 
@@ -16,6 +14,8 @@ yes_or_no = {
 }
 
 def pick_first_unanswered(*prompts):
+    """Returns the first prompt for which the storage doesn't have an
+    answer stored yet."""
     cloned_prompts = map(copy_generator, prompts)
     while True:
         ms = yield
@@ -36,6 +36,7 @@ def pick_first_unanswered(*prompts):
 
 
 def case(*cases):
+    """Returns the first prompt for which the test function returns True"""
     while True:
         ms = yield
         for test, prompt in cases:
