@@ -49,14 +49,31 @@ def case(*cases):
                 prompt.next()
                 validated_answer = prompt.send(answer)
                 yield validated_answer
-        raise AlexandriaException, 'no valid case found'
+        yield False
 
+
+def do(*callbacks):
+    while True:
+        ms = yield
+        for callback in callbacks:
+            callback(ms)
+        yield False
 
 def all_questions_answered(menu_system):
     return len(menu_system.storage) == 10
 
 def more_questions_left(menu_system):
     return not all_questions_answered(menu_system)
+
+
+def print_storage(ms):
+    print table('ms.storage', ms.storage.items())
+
+def check_question(ms):
+    answer = ms.storage['Can traditional medicine cure HIV/AIDS?\n1: yes\n2: no']
+    print answer
+    print answer == [(1, 'yes')]
+    return answer == [(1, 'yes')]
 
 
 ms = MenuSystem(
@@ -74,6 +91,10 @@ ms = MenuSystem(
         prompt(_('Can traditional medicine cure HIV/AIDS?'), **yes_or_no),
         prompt(_('Is an HIV test at any government clinic free of charge?'), **yes_or_no),
         prompt(_('Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'), **yes_or_no),
+    ),
+    # do(print_storage),
+    case(
+            (check_question, prompt('Correct! Press 1 to continue.'))
     ),
     pick_first_unanswered(
         prompt(_('Can HIV be transmitted by sweat?'), **yes_or_no),

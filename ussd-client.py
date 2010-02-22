@@ -8,5 +8,6 @@ client = FakeUSSDClient('console-client')
 
 client_input = client.receive()
 while client_input:
+    """a blank line input cancels the while loop"""
     client.answer(client_input, ms)
     client_input = client.receive().strip()
