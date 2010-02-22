@@ -71,7 +71,8 @@ def print_storage(ms):
     print table('ms.storage', ms.storage.items())
 
 def check_question(ms):
-    answer = ms.storage['Can traditional medicine cure HIV/AIDS?\n1: yes\n2: no']
+    print ms.storage.keys()
+    answer = ms.storage.get('Can traditional medicine cure HIV/AIDS?\n1: yes\n2: no', None)
     return answer == [(1, 'yes')]
 
 
