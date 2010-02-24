@@ -86,8 +86,8 @@ def question(text, options):
     """
     
     Example:
-    
-        ms.append(
+        
+        MenuSystem(
             *question('Can traditional medicine cure HIV/AIDS?', {
                 'no': 'Correct! Press 1 to continue.',
                 'yes': 'Incorrect! Please check your answer and press 1 to continue'
@@ -96,7 +96,7 @@ def question(text, options):
     
     Is the same as:
     
-        ms.append(
+        MenuSystem(
             prompt(_('Can traditional medicine cure HIV/AIDS?'), {
                 'options': ('yes','no'),
                 'validator': pick_one
@@ -141,7 +141,7 @@ ms = MenuSystem(
         prompt(_('Is an HIV test at any government clinic free of charge?'), **yes_or_no),
         prompt(_('Is it possible to test HIV-negative for up to 3-months after becoming HIV-infected?'), **yes_or_no),
     ),
-    # do(print_storage),
+    # do(print_storage),    
     case(
             (check_question, prompt('Correct! Press 1 to continue.'))
     ),

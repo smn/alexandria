@@ -8,11 +8,11 @@ class AlexandriaSSMIClient(Client):
     
     def __init__(self, msisdn, send_callback):
         super(AlexandriaSSMIClient, self).__init__(msisdn)
-        self.msisdn = msisdn
+        self.id = msisdn
         self.send_callback = send_callback
     
     def send(self, text):
-        return self.send_callback(self.msisdn, text)
+        return self.send_callback(self.id, text)
     
 
 class SSMIService(object):

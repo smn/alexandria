@@ -10,11 +10,11 @@ from examples.hivquiz import ms
 class AlexandriaXMPPClient(Client):
     
     def __init__(self, recipient, reply_callback):
-        self.recipient = recipient
+        self.id = recipient
         self.reply_callback = reply_callback
     
     def send(self, message):
-        self.reply_callback(self.recipient, message)
+        self.reply_callback(self.id, message)
     
 
 class MessageHandler(xmppim.MessageProtocol):
@@ -31,7 +31,7 @@ class MessageHandler(xmppim.MessageProtocol):
         print "Disconnected!"
     
     def onMessage(self, msg):
-        if msg["type"] == 'chat' and hasattr(msg, "body"):
+        if msg["type"] == 'chat' and hasattr(msg, "body") and msg.body:
             client = self.clients.setdefault(msg['from'], \
                                 AlexandriaXMPPClient(msg['from'], self._reply))
             client.answer(str(msg.body), self.ms)
@@ -92,15 +92,15 @@ class XMPPClient(client.XMPPClient):
     
     def __init__(self, username, password, host, port):
         super(XMPPClient, self).__init__(JID(username), password, host, port)
-        self.logTraffic = True
+        self.logTraffic = False
         
         # trying to figure out how to automatically accept new buddy
         # authorization requests, failing atm
-        presence_handler = PresenceHandler()
-        presence_handler.setHandlerParent(self)
-        
-        roster_handler = RosterHandler()
-        roster_handler.setHandlerParent(self)
+        # presence_handler = PresenceHandler()
+        # presence_handler.setHandlerParent(self)
+        # 
+        # roster_handler = RosterHandler()
+        # roster_handler.setHandlerParent(self)
         
         message_handler = MessageHandler()
         message_handler.setHandlerParent(self)

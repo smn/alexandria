@@ -1,7 +1,7 @@
 from alexandria.core import coroutine
 from alexandria.exceptions import InvalidInputException
 from generator_tools.copygenerators import copy_generator
-from alexandria.backend import InMemoryBackend
+from alexandria.backend import DjangoBackend
 import logging
 
 # store state in client
