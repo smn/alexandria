@@ -1,4 +1,5 @@
 from zope.interface import implements
+from getpass import getpass
 
 from twisted.python import usage
 from twisted.plugin import IPlugin
@@ -23,7 +24,7 @@ class XMPPServiceMaker(object):
     
     def makeService(self, options):
         if 'p' not in options:
-            options['password'] = raw_input('password for %s: ' % options['username'])
+            options['password'] = getpass('password for %s: ' % options['username'])
         return XMPPClient(**options)
 
 serviceMaker = XMPPServiceMaker()

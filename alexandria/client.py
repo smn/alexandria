@@ -1,7 +1,7 @@
 from alexandria.core import coroutine
 from alexandria.exceptions import InvalidInputException
 from generator_tools.copygenerators import copy_generator
-from alexandria.backend import DjangoBackend
+from alexandria.backend import DBBackend, InMemoryBackend
 import logging
 
 # store state in client
@@ -14,7 +14,7 @@ import logging
 class State(object):
     
     def __init__(self, client):
-        self.backend = InMemoryBackend()
+        self.backend = DBBackend()
         self.client = client
     
     def restore(self):
@@ -41,7 +41,7 @@ class State(object):
                 # the conversation - which is the case with USSD
                 
                 item_awaiting_answer.next()
-                question = item_awaiting_answer.send(menu_system)
+                question = item_awaiting_answer.send((menu_system, self.data))
                 # print 'answering: %s with %s' % (question[0:20], answer)
                 item_awaiting_answer.next() # proceed to answer, feed manually
                 validated_answer = item_awaiting_answer.send(answer)
@@ -55,7 +55,7 @@ class State(object):
                 # start coroutine
                 item.next() 
                 # send the menu system, yields the question
-                question = item.send(menu_system) 
+                question = item.send((menu_system, self.data)) 
                 # coroutines may return empty or False values which means they have
                 # nothing to ask the client
                 if question: 
@@ -70,7 +70,7 @@ class State(object):
             logging.exception(e)
             index, repeat_item = menu_system.repeat_current_item()
             repeat_item.next()
-            repeated_question = repeat_item.send(menu_system)
+            repeated_question = repeat_item.send((menu_system, self.data))
             self.data['previous_index'] = index
             logging.debug('repeating current question: %s' % repeated_question)
             self.client.send(repeated_question)

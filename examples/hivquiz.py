@@ -19,12 +19,12 @@ def pick_first_unanswered(*prompts):
     answer stored yet."""
     cloned_prompts = map(copy_generator, prompts)
     while True:
-        ms = yield
+        ms, session = yield
         while cloned_prompts:
             prompt = cloned_prompts.pop()
             prompt.next()
-            question = prompt.send(ms)
-            if not any([question.startswith(key) for key in ms.storage]):
+            question = prompt.send((ms, session))
+            if not any([question.startswith(key) for key in session]):
                 yield question
                 answer = yield
                 prompt.next()
@@ -39,12 +39,12 @@ def pick_first_unanswered(*prompts):
 def case(*cases):
     """Returns the first prompt for which the test function returns True"""
     while True:
-        ms = yield
+        ms, session = yield
         for test, prompt in cases:
-            if test(ms):
+            if test(ms, session):
                 prompt = copy_generator(prompt)
                 prompt.next()
-                question = prompt.send(ms)
+                question = prompt.send((ms, session))
                 yield question
                 answer = yield
                 prompt.next()
@@ -55,31 +55,31 @@ def case(*cases):
 
 def do(*callbacks):
     while True:
-        ms = yield
+        ms, session = yield
         for callback in callbacks:
-            callback(ms)
+            callback(ms, session)
         yield False
 
-def all_questions_answered(menu_system):
-    return len(menu_system.storage) == 10
+def all_questions_answered(menu_system, session):
+    return len(session) == 10
 
-def more_questions_left(menu_system):
-    return not all_questions_answered(menu_system)
+def more_questions_left(menu_system, session):
+    return not all_questions_answered(menu_system, session)
 
 
-def print_storage(ms):
-    print table('ms.storage', ms.storage.items())
+def print_storage(ms, session):
+    print table('session', session.items())
 
-def check_question(ms):
-    print ms.storage.keys()
-    answer = ms.storage.get('Can traditional medicine cure HIV/AIDS?\n1: yes\n2: no', None)
+def check_question(ms, session):
+    print session.keys()
+    answer = session.get('Can traditional medicine cure HIV/AIDS?\n1: yes\n2: no', None)
     return answer == [(1, 'yes')]
 
 
 def check_answer(question, answer):
-    def _checker(ms):
-        print ms.storage[question] == answer
-        return ms.storage[question] == answer
+    def _checker(ms, session):
+        print session[question] == answer
+        return session[question] == answer
     return _checker
 
 def question(text, options):
@@ -103,11 +103,11 @@ def question(text, options):
             }),
             case(
                 (
-                    lambda ms: ms.storage['Can traditional medicine cure HIV/AIDS?'] == ['1']),
+                    lambda (ms, session): session['Can traditional medicine cure HIV/AIDS?'] == ['1']),
                     prompt('Correct! Press 1 to continue.')
                 ),
                 (
-                    lambda ms: ms.storage['Can traditional medicine cure HIV/AIDS?'] != ['1']),
+                    lambda (ms, session): session['Can traditional medicine cure HIV/AIDS?'] != ['1']),
                     prompt('Incorrect! Please check your answer and press 1 to continue.')
                 ),
             )

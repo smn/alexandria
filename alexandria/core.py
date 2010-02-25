@@ -71,10 +71,10 @@ class MenuSystem(object):
 # @coroutine
 def prompt(text, validator=always_true, options=()):
     while True:
-        ms = yield
+        ms, session = yield
         question = msg(text, options)
         yield question
         answer = yield
         validated_answer = validator(answer, options)
-        ms.store(question, validated_answer)
+        session[text] = validated_answer
         yield validated_answer

@@ -14,21 +14,27 @@ class InMemoryBackend(object):
 
 
 import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'alexandria.backends.db.settings'
 
-class DjangoBackend(object):
-    
-    def __init__(self):
-        from django.conf import settings
-        from alexandria.backends.django import settings
-        settings.configure(deault_settings=settings)
-        from alexandria.backends.django.models import Client
+from django.conf import settings
+from alexandria.backends.db.models import Client, Item
+
+class DBBackend(object):
     
     def restore(self, client):
-        client = Client.objects.get(uuid=client.id)
-        return dict([(item.key, item.value) for item in client.item_set.all()])
+        try:
+            client = Client.objects.recent(uuid=client.id, client_type=client.__class__.__name__)
+            return dict([(item.key, item.deserialized_value) for item in client.item_set.all()])
+        except Client.DoesNotExist, e:
+            return {}
     
     def save(self, client, state):
-        client = Client.objects.create(uuid=client.id)
+        client = Client.objects.recent(uuid=client.id, client_type=client.__class__.__name__)
         for key, value in state.items():
-            client.item_set.create(key=key, value=value)
+            try:
+                item = client.item_set.get(key=key)
+                item.value = value
+                item.save()
+            except Item.DoesNotExist, e:
+                client.item_set.create(key=key, value=value)
         return state

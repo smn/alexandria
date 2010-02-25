@@ -22,11 +22,11 @@ def pick_one(input, options):
 def pick_one_by_digit(digit, options):
     for idx, entry in enumerate(options, start=1):
         if idx == digit:
-            return (digit, entry)
+            return entry
     raise InvalidInputException, 'not one of the available options'
 
 def pick_one_by_value(input, options):
     for idx, entry in enumerate(options, start=1):
         if entry.lower() == input.lower():
-            return (idx, entry)
+            return entry
     raise InvalidInputException, 'not one of the available options'
