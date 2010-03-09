@@ -11,17 +11,22 @@ class AlexandriaSSMIClient(Client):
         self.id = msisdn
         self.send_callback = send_callback
     
-    def send(self, text):
-        return self.send_callback(self.id, text)
+    def send(self, text, end_session=False):
+        if end_session:
+            self.deactivate() # mark client as done
+            reply_type = SSMI_USSD_TYPE_END
+        else:
+            reply_type = SSMI_USSD_TYPE_EXISTING
+        return self.send_callback(self.id, text, reply_type)
     
 
 class SSMIService(object):
     """A Service which can be hooked into a Twisted reactor loop"""
-    def __init__(self, username, password):
+    def __init__(self, menu_system, username, password):
         self.username = username
         self.password = password
         self.clients = {}
-        self.ms = ms.clone()
+        self.ms = menu_system.clone()
     
     def register_ssmi(self, ssmi_protocol):
         self.ssmi_client = ssmi_protocol
@@ -31,8 +36,8 @@ class SSMIService(object):
                                     sms_callback=self.process_sms)
             
     
-    def reply(self, msisdn, text):
-        return self.ssmi_client.send_ussd(msisdn, text)
+    def reply(self, msisdn, text, reply_type):
+        return self.ssmi_client.send_ussd(msisdn, text, reply_type)
     
     def process_sms(self, *args):
         """Process an SMS message received in reply to an SMS we sent out."""
@@ -40,20 +45,21 @@ class SSMIService(object):
     
     def new_ussd_session(self, msisdn, message):
         client = AlexandriaSSMIClient(msisdn, self.reply)
-        self.clients[msisdn] = client
         client.answer(message, self.ms)
     
     def existing_ussd_session(self, msisdn, message):
-        client = self.clients[msisdn]
+        client = AlexandriaSSMIClient(msisdn, self.reply)
         client.answer(message, self.ms)
     
     def timed_out_ussd_session(self, msisdn, message):
         logging.debug('%s timed out, removing client' % msisdn)
-        del self.clients[msisdn]
+        client = AlexandriaSSMIClient(msisdn, self.reply)
+        client.deactivate()
     
     def end_ussd_session(self, msisdn, message):
         logging.debug('%s ended the session, removing client' % msisdn)
-        del self.clients[msisdn]
+        client = AlexandriaSSMIClient(msisdn, self.reply)
+        client.deactivate()
     
     def process_ussd(self, msisdn, ussd_type, ussd_phase, message):
         if self.ssmi_client is None:

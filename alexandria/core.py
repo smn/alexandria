@@ -56,6 +56,9 @@ class MenuSystem(object):
         self.fast_forward(index)
         return self.next()
     
+    def has_next(self):
+        return self.__iter_index < len(self.stack)
+    
     def next(self):
         if self.__iter_index > len(self.stack):
             raise StopIteration
@@ -73,8 +76,61 @@ def prompt(text, validator=always_true, options=()):
     while True:
         ms, session = yield
         question = msg(text, options)
-        yield question
+        yield question, False
         answer = yield
         validated_answer = validator(answer, options)
         session[text] = validated_answer
         yield validated_answer
+
+def end(text):
+    while True:
+        ms, session = yield
+        session['completed'] = True
+        yield text, True
+
+def pick_one(text, options=()):
+	return prompt(text, validator=pick_one, options=options)
+
+def question(text, options):
+    """
+
+    Example:
+
+        MenuSystem(
+            *question('Can traditional medicine cure HIV/AIDS?', {
+                'no': 'Correct! Press 1 to continue.',
+                'yes': 'Incorrect! Please check your answer and press 1 to continue'
+            })
+        )
+
+    Is the same as:
+
+        MenuSystem(
+            prompt(_('Can traditional medicine cure HIV/AIDS?'), {
+                'options': ('yes','no'),
+                'validator': pick_one
+            }),
+            case(
+                (
+                    lambda (ms, session): session['Can traditional medicine cure HIV/AIDS?'] == ['1']),
+                    prompt('Correct! Press 1 to continue.')
+                ),
+                (
+                    lambda (ms, session): session['Can traditional medicine cure HIV/AIDS?'] != ['1']),
+                    prompt('Incorrect! Please check your answer and press 1 to continue.')
+                ),
+            )
+        )
+
+
+    """
+    stack_list = []
+    question_text = msg(text, options.keys())
+    stack_list.append(prompt(text, options=options.keys()))
+    case_list = []
+    for idx, (option, answer) in enumerate(options.items(),start=1):
+        case_list.append(
+            (check_answer(question_text, [str(idx)]), prompt(answer))
+        )
+    stack_list.append(case(*case_list))
+

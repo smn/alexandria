@@ -7,6 +7,7 @@ from twisted.application.service import IServiceMaker
 
 from alexandria.twisted.ussd import SSMIService
 from ssmi import SSMIFactory
+from django.utils import importlib
 
 class Options(usage.Options):
     optParameters = [
@@ -14,6 +15,7 @@ class Options(usage.Options):
         ["password", "pw", '', "SSMI password"],
         ["host", "h", '', "SSMI host"],
         ["port", "p", '', "SSMI host's port"],
+        ['menu', 'm', None, 'The menu system to run']
     ]
 
 
@@ -24,13 +26,16 @@ class SSMIServiceMaker(object):
     options = Options
     
     def makeService(self, options):
+        menu_module = importlib.import_module(options['menu'])
+        menu_system = menu_module.get_menu()
+        
         # all are mandatory, if they haven't been provided, prompt for them
         for key in options:
             if not options[key]:
                 options[key] = raw_input('%s: ' % key)
         
         def app_register(ssmi_protocol):
-            return SSMIService(options['username'], options['password']) \
+            return SSMIService(menu_system, options['username'], options['password']) \
                                 .register_ssmi(ssmi_protocol)
         
         return internet.TCPClient(options['host'], int(options['port']), 

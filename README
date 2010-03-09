@@ -1,1 +1,7 @@
 Experiments in writing a DSL in Python for interactive text based menu systems
+
+Some things I'm contemplating:
+
+- Create a request type object that has access to the menu system and the session storage. Simplifies the current `ms, session = yield` stuff a little bit.
+
+- Data store needs to be more pluggable, it can currently be changed but it is ugly.

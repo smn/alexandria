@@ -21,20 +21,23 @@ from alexandria.backends.db.models import Client, Item
 
 class DBBackend(object):
     
-    def restore(self, client):
-        try:
-            client = Client.objects.recent(uuid=client.id, client_type=client.__class__.__name__)
-            return dict([(item.key, item.deserialized_value) for item in client.item_set.all()])
-        except Client.DoesNotExist, e:
-            return {}
+    def __init__(self, client):
+        self.client = Client.objects.recent(uuid=client.id, 
+                                            client_type=client.__class__.__name__)
     
-    def save(self, client, state):
-        client = Client.objects.recent(uuid=client.id, client_type=client.__class__.__name__)
+    def restore(self):
+        return dict([(item.key, item.deserialized_value) for item in self.client.item_set.all()])
+    
+    def deactivate(self):
+        self.client.active = False
+        self.client.save()
+    
+    def save(self, state):
         for key, value in state.items():
             try:
-                item = client.item_set.get(key=key)
+                item = self.client.item_set.get(key=key)
                 item.value = value
                 item.save()
             except Item.DoesNotExist, e:
-                client.item_set.create(key=key, value=value)
+                self.client.item_set.create(key=key, value=value)
         return state

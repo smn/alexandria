@@ -14,14 +14,16 @@ import logging
 class State(object):
     
     def __init__(self, client):
-        self.backend = DBBackend()
         self.client = client
+        self.backend = DBBackend(client)
     
     def restore(self):
-        self.data = self.backend.restore(self.client)
+        self.data = self.backend.restore()
     
-    def save(self):
-        self.backend.save(self.client, self.data)
+    def save(self, deactivate=False):
+        self.backend.save(self.data)
+        if deactivate:
+            self.backend.deactivate()
     
     def get_previously_sent_item(self, menu_system):
         previous_index = self.data.get('previous_index', None)
@@ -41,7 +43,7 @@ class State(object):
                 # the conversation - which is the case with USSD
                 
                 item_awaiting_answer.next()
-                question = item_awaiting_answer.send((menu_system, self.data))
+                question, end_session = item_awaiting_answer.send((menu_system, self.data))
                 # print 'answering: %s with %s' % (question[0:20], answer)
                 item_awaiting_answer.next() # proceed to answer, feed manually
                 validated_answer = item_awaiting_answer.send(answer)
@@ -53,40 +55,43 @@ class State(object):
             index, item = menu_system.next_after(self.data.get('previous_index',0))
             while item:
                 # start coroutine
-                item.next() 
+                item.next()
                 # send the menu system, yields the question
-                question = item.send((menu_system, self.data)) 
+                question, end_session = item.send((menu_system, self.data)) 
                 # coroutines may return empty or False values which means they have
                 # nothing to ask the client
-                if question: 
-                    self.client.send(question)
+                if question:
+                    self.client.send(question, end_session)
                     # print 'setting previous index to', index
                     self.data['previous_index'] = index
                     break # break out of ugly while True: loop
                 else:
                     index, item = menu_system.next()
-                
+            
         except InvalidInputException, e:
             logging.exception(e)
             index, repeat_item = menu_system.repeat_current_item()
             repeat_item.next()
-            repeated_question = repeat_item.send((menu_system, self.data))
+            repeated_question, end_session = repeat_item.send((menu_system, self.data))
             self.data['previous_index'] = index
             logging.debug('repeating current question: %s' % repeated_question)
-            self.client.send(repeated_question)
+            self.client.send(repeated_question, end_session)
             
-                
+
 
 class Client(object):
     def __init__(self, id):
         self.id = id
+        self.state = State(client=self)
     
     def answer(self, message, menu_system):
-        self.state = State(client=self)
         self.state.restore()
         self.state.next(message, menu_system)
         self.state.save()
     
+    def deactivate(self):
+        self.state.restore()
+        self.state.save(deactivate=True)
 
 
 class FakeUSSDClient(Client):
@@ -96,7 +101,10 @@ class FakeUSSDClient(Client):
     def format(self, msg):
         return '-> ' + '\n-> '.join(msg.split('\n'))
     
-    def send(self, text):
+    def send(self, text, end_session):
         print self.format(text)
+        if end_session:
+            self.deactivate()
+            print 'end of menu'
     
 
