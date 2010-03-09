@@ -90,7 +90,6 @@ class Client(object):
         self.state.save()
     
     def deactivate(self):
-        self.state.restore()
         self.state.save(deactivate=True)
 
 

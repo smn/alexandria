@@ -85,8 +85,7 @@ def prompt(text, validator=always_true, options=()):
 def end(text):
     while True:
         ms, session = yield
-        session['completed'] = True
-        yield text, True
+        yield text, True # True is for, yes, end the session - FIXME!
 
 def pick_one(text, options=()):
 	return prompt(text, validator=pick_one, options=options)
