@@ -3,4 +3,4 @@
 logs/*
 tmp/*
 dropin.cache
-db/*
+*.db

@@ -21,7 +21,9 @@
         
         function create_graph(pair, index) {
             div = create_container(index);
-            plot_data(div, pair.key, $H(pair.value));
+            if($H(pair.value).size() > 1) {
+                plot_data(div, pair.key, $H(pair.value));
+            }
         }
         
         function plot_data(container, question, answers) {
@@ -36,6 +38,8 @@
                 values.push(pair.value);
                 legends.push("%%.%% " + pair.key);
             })
+            alert(values);
+            alert(legends);
             
             var pie = r.g.piechart(320, 240, 80,
                 values,

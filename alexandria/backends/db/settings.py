@@ -8,7 +8,7 @@ APP_ROOT = abspath(join(dirname(__file__),'..'))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'db/alexandria_dev.db',
+        'NAME': join(APP_ROOT,'db','db','alexandria_dev.db'),
         'USER': '',
         'PASSWORD': '',
         'PORT': '',
@@ -30,7 +30,7 @@ MEDIA_URL = '/static/'
 ROOT_URLCONF = 'alexandria.backends.db.urls'
 
 INSTALLED_APPS = (
-    'alexandria.backends.db',
     'django.contrib.admin',
     'django.contrib.contenttypes',
+    'alexandria.backends.db',
 )
