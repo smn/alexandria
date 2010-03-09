@@ -1,4 +1,5 @@
 from zope.interface import implements
+from getpass import getpass
 
 from twisted.python import usage
 from twisted.plugin import IPlugin
@@ -32,7 +33,7 @@ class SSMIServiceMaker(object):
         # all are mandatory, if they haven't been provided, prompt for them
         for key in options:
             if not options[key]:
-                options[key] = raw_input('%s: ' % key)
+                options[key] = getpass('%s: ' % key)
         
         def app_register(ssmi_protocol):
             return SSMIService(menu_system, options['username'], options['password']) \
