@@ -1,7 +1,7 @@
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'alexandria_dev',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'db/alexandria_dev.db',
         'USER': '',
         'PASSWORD': '',
         'PORT': '',
