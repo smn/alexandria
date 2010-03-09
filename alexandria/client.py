@@ -83,6 +83,7 @@ class Client(object):
     def __init__(self, id):
         self.id = id
         self.state = State(client=self)
+        self.state.restore()
     
     def answer(self, message, menu_system):
         self.state.restore()
