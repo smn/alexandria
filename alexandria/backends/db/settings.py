@@ -8,7 +8,7 @@ APP_ROOT = abspath(join(dirname(__file__),'..'))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': join(APP_ROOT,'db','db','alexandria_dev.db'),
+        'NAME': join(APP_ROOT,'db','sqlite3','alexandria_dev.db'),
         'USER': '',
         'PASSWORD': '',
         'PORT': '',
