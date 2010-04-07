@@ -64,6 +64,33 @@ In order of *importance*:
 
 2. All transports allow a `--menu` option to specify what menu to run.
 
-3. Create a request type object that has access to the menu system and the session storage. Simplifies the current `ms, session = yield` stuff a little bit.
+3. Allow for tree like menu structures, see the example below.
 
-4. Data store needs to be more pluggable. It can currently be changed but it is ugly and requiring all of Django just for the models is a bit of an overkill, either we choose to make use of *all* of Django or write a simple little db layer for access an sqlite3 database.
+4. Create a request type object that has access to the menu system and the session storage. Simplifies the current `ms, session = yield` stuff a little bit.
+
+5. Data store needs to be more pluggable. It can currently be changed but it is ugly and requiring all of Django just for the models is a bit of an overkill, either we choose to make use of *all* of Django or write a simple little db layer for access an sqlite3 database.
+
+
+PSEUDOCODE EXAMPLE
+------------------
+
+    prompt("What is your favorite programming language?", name="start", options={
+        "python": prompt('You rock! What version?', {
+            "2.3": prompt("Oooh very old"),
+            "2.4": prompt("Nicer...")
+        }),
+        "ruby": prompt("Sweet, what runtime?", {
+            "mzr": prompt('classic'),
+            "jruby": prompt('edgy')
+            # nesting deeper
+            ...
+                ...
+                    ...
+                        ... 
+                            ...
+                                ...
+                                    ...
+                                        # ability to jump to a named anchor
+                                        goto("start") 
+        })
+    })
