@@ -11,11 +11,14 @@ You'll need to install this stuff
 * generator_tools (w/ pip or easy_install)
 * django (for the current database backend)
 * twisted (for the USSD and XMPP runners)
+* wokkel (an XMPP lib on top of Twisted)
+
+Currently both `django` and `wokkel` are available in the `./lib/` directory. Add the directory to your `$PYTHONPATH` to be able to load to modules.
 
 RUNNING THE CODE
 ----------------
 
-There are currently 3 options for running the menus, USSD, XMPP and a command line runner. There are shortcuts for the XMPP and USSD services in the `./bin/` directory, console based runner is surprisingly called `./command-line-client.py`.
+There are currently 3 options for running the menus, USSD, XMPP and a command line runner. 
 
 On OS X `twistd`, the Twisted application runner, sometimes complains about not being able write to a `dropin.cache` folder. Running `twistd` with `sudo` will fix that for you. Also, when using python2.6 or later the current Twisted version will raise warnings about the `md5` and `sha` modules being deprecated, those are ugly but not harmful.
 
@@ -54,6 +57,8 @@ The XMPP plugin currently doesn't accept a `--menu` option yet, it is hard coded
 Alexandria provides a command line client for testing menu's with. It currently expects 1 single argument, an MSISDN for the connecting client as it imitates a USSD session. It, like the XMPP transport, does not yet provide a `--menu` option.
 
 Example: `./command-line-client 27761234567`
+
+Returning blank will end the connection and close the process.
 
 TODO
 ----

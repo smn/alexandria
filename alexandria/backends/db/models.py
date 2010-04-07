@@ -8,6 +8,12 @@ class ClientTimeLimitManager(models.Manager):
     TIME_LIMIT = timedelta(minutes=3)
     
     def recent(self, uuid, client_type):
+        """
+        Returns a client for the given UUID and client type that has a 
+        session of no older than `TIME_LIMIT`.
+        
+        If none exists then it'll create a new client for a new session.
+        """
         try:
             return super(ClientTimeLimitManager, self) \
                     .get_query_set() \
@@ -20,7 +26,9 @@ class ClientTimeLimitManager(models.Manager):
         
 
 class Client(models.Model):
-    """A client that's connected"""
+    """
+    A client that's connected
+    """
     uuid = models.CharField(blank=True, max_length=255)
     client_type = models.CharField(blank=True, max_length=100)
     active = models.BooleanField(default=True)
@@ -46,6 +54,8 @@ class Item(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # FIXME:    Ooh my, does this a lot better than we do, I shouldn't be
+    #           writing this stuff.
     DESERIALIZERS = {
         'Boolean': lambda v: v == 'True',
         'Dict': lambda v: simplejson.loads(v),
@@ -77,6 +87,34 @@ class Item(models.Model):
         search_fields = ('key','value')
     
     def determine_type(self, value):
+        """
+        Try and determine the type for the given value, it does this by
+        looping over the available SERIALIZERS and returning the type if
+        the given value is of the given type.
+        
+        >>> item = Item()
+        >>> item.determine_type(True)
+        'Boolean'
+        >>> item.determine_type({'key': 'value'})
+        'Dict'
+        >>> item.determine_type(1.0)
+        'Float'
+        >>> item.determine_type(1)
+        'Int'
+        >>> item.determine_type([1,2,3])
+        'List'
+        >>> item.determine_type(1234L)
+        'Long'
+        >>> item.determine_type(None)
+        'None'
+        >>> item.determine_type("String")
+        'String'
+        >>> item.determine_type((1,2,3,4))
+        'Tuple'
+        >>> item.determine_type(u'Unicode')
+        'Unicode'
+        
+        """
         for available_type in self.SERIALIZERS:
             klass = getattr(types,'%sType' % available_type)
             if isinstance(value, klass):
@@ -85,6 +123,10 @@ class Item(models.Model):
     
     @property
     def deserialized_value(self):
+        """
+        Returns the deserialized value of the value states been saved in
+        serialized state in the database.
+        """
         if self.value_type:
             deserializer = self.DESERIALIZERS[self.value_type]
             return deserializer(self.value)
