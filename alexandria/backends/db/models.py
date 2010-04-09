@@ -45,6 +45,8 @@ class Client(models.Model):
     def __unicode__(self):
         return u"Client"
 
+class ItemException(Exception): pass
+
 class Item(models.Model):
     """A session item to store"""
     client = models.ForeignKey(Client)
@@ -134,16 +136,27 @@ class Item(models.Model):
             for deserializer_type, deserializer in self.DESERIALIZERS:
                 if self.value_type == deserializer_type:
                     return deserializer(self.value)
-        return None
+        raise ItemException, 'value_type unknown, unable to deserialize'
     
     def save(self, *args, **kwargs):
+        """
+        Serialize the data before saving it to the database. 
+        
+        FIXME:  This is buggy since the data and type stored in the 'value' 
+                variable will change before and after a save. This is a 
+                horrible side effect.
+        
+        FIXME:  Use a pre_save signal instead
+        """
         # get the type we're trying to save, store it for deserializing
         self.value_type = self.determine_type(self.value)
         if self.value_type:
             # get the serializer
-            serializer = self.SERIALIZERS[self.value_type]
-            # set the value to be stored in the db
-            self.value = serializer(self.value)
+            for serializer_type, serializer in self.SERIALIZERS:
+                if self.value_type == serializer_type:
+                    # set the value to be stored in the db
+                    self.value = serializer(self.value)
+                    break
         return super(Item, self).save(*args, **kwargs)
     
     def __unicode__(self):

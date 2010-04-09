@@ -4,28 +4,44 @@ from generator_tools.copygenerators import copy_generator
 from alexandria.backend import DBBackend, InMemoryBackend
 import logging
 
-# store state in client
-# serialize state only
-# state has slots for previous question (pending an answer)
-# answer always fills in the slot - allows us to skip questions that
-# appear to be irrelevant as we progress through the menu
-
 
 class State(object):
+    """
+    The state of a client connecting to the system. 
+    
+    FIXME: This should be in it's own module
+    """
     
     def __init__(self, client):
         self.client = client
+        # FIXME:    the backend should be pluggable from settings, not so 
+        #           deep down in the code
         self.backend = DBBackend(client)
     
     def restore(self):
+        """
+        Restore the current state from the backend
+        
+        FIXME:  This is hideous, we should be providing the backend with some
+                client vars with which it should be able to return the state,
+                passing along the the whole client at __init__ is ugly.
+        """
         self.data = self.backend.restore()
     
     def save(self, deactivate=False):
+        """
+        Save the current state to the backend. Specify deactivate=True if you
+        want to close this session for good.
+        """
         self.backend.save(self.data)
         if deactivate:
             self.backend.deactivate()
     
     def get_previously_sent_item(self, menu_system):
+        """
+        Get the item that was previously sent to the client. It is needed to 
+        be able to determine what question the incoming answer is answering.
+        """
         previous_index = self.data.get('previous_index', None)
         # we can't check for just previous_index, since zero resolves to False 
         # in an if statement
@@ -33,28 +49,36 @@ class State(object):
             return copy_generator(menu_system.stack[previous_index - 1])
     
     def next(self, answer, menu_system):
+        """
+        Step through the system, go to the next item. The answer is the incoming
+        input coming from the client.
+        """
         # check what item was sent previously
         try:
             item_awaiting_answer = self.get_previously_sent_item(menu_system)
-            # print "data, checking for answer: ", self.data
             if item_awaiting_answer:
-                # if this is the case it means we're at the start of a session
-                # with a client. We're assuming that the client always initiates
-                # the conversation - which is the case with USSD
-                
+                # if we have an item_awaiting_answer then it means this is a
+                # returning session. The incoming answer is an answer to a
+                # question we've sent earlier.
                 item_awaiting_answer.next()
                 question, end_session = item_awaiting_answer.send((menu_system, self.data))
-                # print 'answering: %s with %s' % (question[0:20], answer)
                 item_awaiting_answer.next() # proceed to answer, feed manually
                 validated_answer = item_awaiting_answer.send(answer)
-                # print 'validated answer', answer
             else:
+                # if this is the case it means we're not at the start of a session
+                # with a client. We're assuming that the client always initiates
+                # the conversation - which is the case with USSD
                 logging.debug('client initiated contact with: %s' % answer)
         
-            ###### SEND OUTPUT
+            # send output back to the client
             index, item = menu_system.next_after(self.data.get('previous_index',0))
             while item:
-                # start coroutine
+                # We loop over the item's since they might not return a question
+                # which means we have to move forward to the next time. Basically
+                # we're looping over items until one returns a question to
+                # send back to the client
+                
+                # FIXME: start coroutine, this can be automated with a @decorator
                 item.next()
                 # send the menu system, yields the question
                 question, end_session = item.send((menu_system, self.data)) 
@@ -62,13 +86,15 @@ class State(object):
                 # nothing to ask the client
                 if question:
                     self.client.send(question, end_session)
-                    # print 'setting previous index to', index
                     self.data['previous_index'] = index
-                    break # break out of ugly while True: loop
+                    break # break out of ugly `while True:..` loop
                 else:
                     index, item = menu_system.next()
             
         except InvalidInputException, e:
+            # Invalid input exceptions can be raised which means the client didn't 
+            # provide correct input for the given question. If that's the case
+            # then we ask the question again.
             logging.exception(e)
             index, repeat_item = menu_system.repeat_current_item()
             repeat_item.next()
