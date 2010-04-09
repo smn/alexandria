@@ -56,31 +56,34 @@ class Item(models.Model):
     
     # FIXME:    Ooh my, does this a lot better than we do, I shouldn't be
     #           writing this stuff.
-    DESERIALIZERS = {
-        'Boolean': lambda v: v == 'True',
-        'Dict': lambda v: simplejson.loads(v),
-        'Float': lambda v: types.FloatType(v),
-        'Int': lambda v: types.IntType(v),
-        'List': lambda v: simplejson.loads(v),
-        'Long': lambda v: types.LongType(v),
-        'None': lambda v: None,
-        'String': lambda v: types.StringType(v),
-        'Tuple': lambda v: tuple(simplejson.loads(v)),
-        'Unicode': lambda v: types.UnicodeType(v)
-    }
+    DESERIALIZERS = [
+        ('Boolean', lambda v: v == 'True'), 
+        ('Dict', lambda v: simplejson.loads(v)), 
+        ('Float', lambda v: types.FloatType(v)), 
+        ('Int', lambda v: types.IntType(v)), 
+        ('List', lambda v: simplejson.loads(v)), 
+        ('Long', lambda v: types.LongType(v)), 
+        ('None', lambda v: None), 
+        ('String', lambda v: types.StringType(v)), 
+        ('Tuple', lambda v: tuple(simplejson.loads(v))), 
+        ('Unicode', lambda v: types.UnicodeType(v)), 
+    ]
     
-    SERIALIZERS = {
-        'Boolean': lambda v: v,
-        'Dict': lambda v: simplejson.dumps(v),
-        'Float': lambda v: v,
-        'Int': lambda v: v,
-        'List': lambda v: simplejson.dumps(v),
-        'Long': lambda v: v,
-        'None': lambda v: v,
-        'String': lambda v: v,
-        'Tuple': lambda v: simplejson.dumps(v),
-        'Unicode': lambda v: v
-    }
+    # the order is importance since python things True == 1 causing
+    # a mixup of BooleanType and IntType, by checking for the BooleanType
+    # first we avoid that problem.
+    SERIALIZERS = [
+        ('Boolean', lambda v: v), 
+        ('Dict', lambda v: simplejson.dumps(v)), 
+        ('Float', lambda v: v), 
+        ('Int', lambda v: v), 
+        ('List', lambda v: simplejson.dumps(v)), 
+        ('Long', lambda v: v), 
+        ('None', lambda v: v), 
+        ('String', lambda v: v), 
+        ('Tuple', lambda v: simplejson.dumps(v)), 
+        ('Unicode', lambda v: v)
+    ]
     
     class Admin:
         list_display = ('key','value','created_at')
@@ -115,7 +118,7 @@ class Item(models.Model):
         'Unicode'
         
         """
-        for available_type in self.SERIALIZERS:
+        for available_type, _ in self.SERIALIZERS:
             klass = getattr(types,'%sType' % available_type)
             if isinstance(value, klass):
                 return available_type
@@ -128,8 +131,9 @@ class Item(models.Model):
         serialized state in the database.
         """
         if self.value_type:
-            deserializer = self.DESERIALIZERS[self.value_type]
-            return deserializer(self.value)
+            for deserializer_type, deserializer in self.DESERIALIZERS:
+                if self.value_type == deserializer_type:
+                    return deserializer(self.value)
         return None
     
     def save(self, *args, **kwargs):

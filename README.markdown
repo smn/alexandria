@@ -13,6 +13,13 @@ You'll need to install this stuff
 * twisted (for the USSD and XMPP runners)
 * wokkel (an XMPP lib on top of Twisted)
 
+To run the tests make sure you have the following packages installed:
+
+* Nose
+* Nose-exclude
+
+Run the tests with `nosetests` from the command line. The file `setup.cfg` specifies the default options for nose.
+
 Currently both `django` and `wokkel` are available in the `./lib/` directory. Add the directory to your `$PYTHONPATH` to be able to load to modules.
 
 RUNNING THE CODE
