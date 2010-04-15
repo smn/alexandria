@@ -13,86 +13,195 @@ logger = logging.getLogger()
 logger.name = "alexandria"
 logger.level = logging.DEBUG
 
-handler = TimedRotatingFileHandler("logs/alexandria.log", when='midnight', backupCount=14)
+handler = TimedRotatingFileHandler("logs/alexandria.log", 
+                                    interval=1, # every day
+                                    when='midnight', # rotate at midnight 
+                                    backupCount=14) # keep 14 days worth of logs
 handler.setFormatter(logging.Formatter('[%(name)s] %(asctime)s %(levelname)s %(message)s'))
 logger.addHandler(handler)
 
 class MenuSystem(object):
     def __init__(self, *items):
-        # a list of items to work through in this menu
+        # a simple linear stack of items to work through
         self.stack = list(items)
-        self.storage = {}
+        self.storage = {} # deprecated, waiting on tests before I kill this
         self.__iter_index = 0
     
     def clone(self, **kwargs):
-        """Clone self, always return a clone instead of self when chaining
-        methods, otherwise you'll get lost of confusing behaviour because
-        vars are passed by reference"""
+        """
+        Clone self, always return a clone instead of self when chaining
+        methods, otherwise you'll get lots of confusing behaviour because
+        vars are passed by reference
+        """
         clone = self.__class__.__new__(self.__class__)
         clone.__dict__ = self.__dict__.copy()
         clone.__dict__.update(kwargs)
         return clone
     
     def store(self, key, value):
+        """
+        Deprecated, session store is now separate from the menu descriptions
+        """
+        raise PendingDeprecationWarning, "use a session storage instead"
         self.storage.setdefault(key, []).append(value)
     
     def append(self, *items):
-        """Clone the stack and append a batch of items to it"""
+        """
+        Clone the stack and append *items to it. Appended items need to be
+        coroutines.
+        """
         clone = self.clone()
         clone.stack.extend(list(items))
         return clone
     
     def __iter__(self):
+        raise PendingDeprecationWarning, "no longer in use"
         return self
     
     def fast_forward(self, index):
+        """
+        Fast forward to the given index in the stack.
+        
+        TODO:   how will we go about this when menu's become tree structures 
+                instead of linear paths?
+        """
         self.__iter_index = index
     
     def repeat_current_item(self):
+        """
+        Repeat the current item, decrements the counter by one & calls 
+        next() to repeat the current item.
+        """
         self.fast_forward(self.__iter_index - 1)
         return self.next()
     
     def next_after(self, index):
+        """
+        Short hand for returning the next item in the stack
+        """
         self.fast_forward(index)
         return self.next()
     
     def has_next(self):
+        """Deprecated, Iterator pattern that isn't being used anymore"""
+        raise PendingDeprecationWarning, "no longer being used"
         return self.__iter_index < len(self.stack)
     
     def next(self):
+        """
+        Proceed to the next coroutine in the stack
+        """
+        # If we've reached the end of the stack stop iterating
         if self.__iter_index > len(self.stack):
             raise StopIteration
         
+        # If we're at the last time there isn't a next item to send 
+        # to the client so return None
         if self.__iter_index == len(self.stack):
             next_item = None
         else:
+            # otherwise, copy the coming coroutine, the index is always
+            # one ahead of where we are actually at.
             next_item = copy_generator(self.stack[self.__iter_index])
+        # increment, ready for next round
         self.__iter_index += 1
         return self.__iter_index, next_item
 
 
-# @coroutine
+# TODO:
+#
+# This var1, var2 = yield stuff is far too magical for every day use.
+# We should be looking at ways of abstracting this away from every day
+# development. The power of coroutines is in masking blocking processes
+# as non-blocking
+#
+# We should be able to do the following, this is almost correct pseudo code
+# that might actually work but isn't tested yet.
+# 
+# class Interaction(object):
+#     
+#     def do(self):
+#         """
+#         All these processes are blocking processes but coroutines allow us
+#         to delay their execution until the client returns.
+#         """
+#         self.start()
+#         self.send_output()
+#         self.receive_input()
+#     
+#     def start(self):
+#         self.ms, self.session = yield
+#     
+#     def send_output(self):
+#         yield self.generate_output()
+#     
+#     def generate_output(self):
+#         raise NotImplementedError, "needs to be overriden by subclass"
+#     
+#     def receive_input(self):
+#         _input = yield()
+#         yield self.process_input(_input)
+#     
+#     def process_input(self, _input):
+#         raise NotImplementedError, "needs to be overriden by subclass"
+# 
+# class Prompt(Interaction):
+#     
+#     def __init__(self, text, options=(), validator=always_true):
+#         self.text = text
+#         self.options = options
+#         self.validator = validator
+#     
+#     def generate_output(self):
+#         """return the output to be sent back to the client"""
+#         end_of_session = False # we need to find a way to make this more explicit
+#         return msg(self.text, self.options), end_of_session
+#     
+#     def process_input(self, _input):
+#         """process the input received from the client"""
+#         validated_answer = self.validator(_input, self.options)
+#         self.session[text] = validated_answer
+#         return validated_answer
+#     
+# 
+
+# FIXME: Use @coroutine decorator
 def prompt(text, validator=always_true, options=()):
-    while True:
+    """
+    Prompt the user with a question, possibly multiple choice. 
+    Read the answer, validate it and store it in the session store.
+    """
+    while True: # allows coroutines to be re-run
+        # get menu system & session store
         ms, session = yield
         question = msg(text, options)
+        # return question & boolean indicating end of session
+        # FIXME: boolean is ugly
         yield question, False
+        # get answer back
         answer = yield
+        # validate
         validated_answer = validator(answer, options)
+        # store question & validated answer
         session[text] = validated_answer
+        # return validated answer
         yield validated_answer
 
 def end(text):
+    """
+    Sign-off the user with the given text. Ends the session
+    """
     while True:
         ms, session = yield
         yield text, True # True is for, yes, end the session - FIXME!
 
 def pick_one(text, options=()):
+    raise PendingDeprecationWarning, "not used & not working afaik"
 	return prompt(text, validator=pick_one, options=options)
 
 def question(text, options):
     """
-
+    
     Example:
 
         MenuSystem(
