@@ -75,56 +75,6 @@ def check_question(ms, session):
     return answer == [(1, 'yes')]
 
 
-def check_answer(question, answer):
-    def _checker(ms, session):
-        print session[question] == answer
-        return session[question] == answer
-    return _checker
-
-# def question(text, options):
-#     """
-#     
-#     Example:
-#         
-#         MenuSystem(
-#             *question('Can traditional medicine cure HIV/AIDS?', {
-#                 'no': 'Correct! Press 1 to continue.',
-#                 'yes': 'Incorrect! Please check your answer and press 1 to continue'
-#             })
-#         )
-#     
-#     Is the same as:
-#     
-#         MenuSystem(
-#             prompt(_('Can traditional medicine cure HIV/AIDS?'), {
-#                 'options': ('yes','no'),
-#                 'validator': pick_one
-#             }),
-#             case(
-#                 (
-#                     lambda (ms, session): session['Can traditional medicine cure HIV/AIDS?'] == ['1']),
-#                     prompt('Correct! Press 1 to continue.')
-#                 ),
-#                 (
-#                     lambda (ms, session): session['Can traditional medicine cure HIV/AIDS?'] != ['1']),
-#                     prompt('Incorrect! Please check your answer and press 1 to continue.')
-#                 ),
-#             )
-#         )
-#     
-#     
-#     """
-#     stack_list = []
-#     question_text = msg(text, options.keys())
-#     stack_list.append(prompt(text, options=options.keys()))
-#     case_list = []
-#     for idx, (option, answer) in enumerate(options.items(),start=1):
-#         case_list.append(
-#             (check_answer(question_text, [str(idx)]), prompt(answer))
-#         )
-#     stack_list.append(case(*case_list))
-# 
-
 ms = MenuSystem(
     prompt('Thnx 4 taking the Quiz! Answer 3 questions and see how much you know. '
             'Pick your language:', options=(

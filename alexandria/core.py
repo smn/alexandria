@@ -201,6 +201,8 @@ def pick_one(text, options=()):
 
 def question(text, options):
     """
+    Having python generate prompts & cases for us on the fly. We should probably
+    look at ways of doing more of this or making it possible through the DSL.
     
     Example:
 
@@ -232,13 +234,31 @@ def question(text, options):
 
 
     """
+    
+    # FIXME: this shouldn't be inline once stuff goes into production
+    def check_answer(question, answer):
+        def _checker(ms, session):
+            print session[question] == answer
+            return session[question] == answer
+        return _checker
+    
+    
+    # temporary stack that is unpacked with python's * operator
     stack_list = []
+    # generate the question, need it for checking the answer later on
     question_text = msg(text, options.keys())
+    # add prompt to the stack, the keys in the dictionary are the options for the prompt
     stack_list.append(prompt(text, options=options.keys()))
+    # temporary stack to store cases
     case_list = []
+    # loop over the items with a counter, starting at 1 since we render 
+    # the option list starting at 1
     for idx, (option, answer) in enumerate(options.items(),start=1):
+        # append the check anwer to the case list
+        # if check_answer returns true, return the given prompt
         case_list.append(
             (check_answer(question_text, [str(idx)]), prompt(answer))
         )
+    # append the unpacked case list to the stack list
     stack_list.append(case(*case_list))
 
