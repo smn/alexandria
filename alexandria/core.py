@@ -237,6 +237,8 @@ def question(text, options):
     
     # FIXME: this shouldn't be inline once stuff goes into production
     def check_answer(question, answer):
+        # this closuer is returned to the case statement since it requires a 
+        # call back and not a result of a function
         def _checker(ms, session):
             print session[question] == answer
             return session[question] == answer

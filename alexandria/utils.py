@@ -2,21 +2,48 @@ import random
 import operator
 
 def msg(message, options):
+    """
+    
+    >>> print msg("1 + 1 = ?", ("1", "2"))
+    1 + 1 = ?
+    1: 1
+    2: 2
+    >>>
+    
+    """
     if options:
         message += '\n' + ol(options)
     return message
 
 def ol(list):
-    """return an ordered list"""
+    """
+    >>> print ol(["a","b","c"])
+    1: a
+    2: b
+    3: c
+    >>> 
+    
+    """
     return '\n'.join('%s: %s' % (idx, item) for idx,item in enumerate(list, start=1))
 
 def shuffle(*items):
+    """
+    Randomly reorder the items in the list
+    """
     items = list(items)
     random.shuffle(items)
     return items
 
 
-def coroutine(func): 
+def coroutine(func):
+    """
+    Grabbed from the pip-0342 examples:
+    
+        'A simple "consumer" decorator that makes a generator function
+        automatically advance to its first yield point when initially
+        called'
+    
+    """
     def start(*args,**kwargs): 
         cr = func(*args,**kwargs) 
         cr.next() 
@@ -27,33 +54,20 @@ def coroutine(func):
     return start
 
 
-class DelayedCall(object):
-    """FIXME: This is a solution to a lower problem that hasn't been adressed yet"""
-    def __init__(self, fn, *args, **kwargs):
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-    
-    def __str__(self):
-        return 'DelayedCall(%s)' % self.__dict__
-    
-    def invoke(self):
-        return self.fn(*self.args, **self.kwargs)
-    
-
-
-def delay_call(fn):
-    """Wrap the call to the function in a DelayedCall, not sure if I want 
-    to keep this. The main reason is that DelayedCalls are easier to introspect
-    than coroutine generators. I'd like to know something about the coroutine
-    I'm starting before it runs"""
-    def wrapper(*args, **kwargs):
-        return DelayedCall(fn,*args, **kwargs)
-    return wrapper
-
-
 def table(header, data):
-    """print a pretty table for in the console"""
+    """
+    Print a pretty table for in the console, nice for debugging the state.
+    
+    >>> print table("Header", {"hello":"world", "foo":"bar"}.items())
+    +-----------+
+    |   Header  |
+    +-----------+
+    |foo  |bar  |
+    |hello|world|
+    +-----------+
+    >>> 
+    
+    """
     column_widths = {}
     buffer = []
     # grab the first row to count the columns
