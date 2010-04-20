@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from alexandria.core import prompt, end, question
+from alexandria.core import prompt, end, question, pick_first_unanswered
 from alexandria.utils import msg
 from alexandria.validators import pick_one
 
@@ -125,3 +125,36 @@ class QuestionTestCase(TestCase):
         self.assertEquals(response_text, "Please see a doctor and press 1 "
                                             "to continue.")
         self.assertFalse(end_of_session)
+
+
+class CombinedCoroutineTestCase(TestCase):
+    """
+    Where we test coroutines that are really a combination of other 
+    coroutines.
+    """
+    
+    def setUp(self):
+        self.session_store = {}
+    
+    def test_pick_first_unanswered(self):
+        """
+        pick_first_unanswered() accepts a number of prompts and when called 
+        fires off the first prompt() it finds for which the session store does
+        not have an entry yet.
+        """
+        
+        pfu = pick_first_unanswered(
+                prompt("What is your name?"),
+                prompt("What is your age?"),
+                prompt("What is your gender?"))
+        
+        pfu.next()
+        [question_text, end_of_session] = pfu.send((MockMenuSystem(), {
+            "What is your name?": "Simon",
+            "What is your gender?": "Male",
+        }))
+        
+        self.assertEquals(question_text, "What is your age?")
+        self.assertFalse(end_of_session)
+        
+    

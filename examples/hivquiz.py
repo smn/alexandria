@@ -1,4 +1,4 @@
-from alexandria.core import MenuSystem, prompt, question, case
+from alexandria.core import MenuSystem, prompt, question, case, pick_first_unanswered
 from alexandria.utils import shuffle, table
 from alexandria.validators import pick_one
 from alexandria.utils import msg
@@ -13,27 +13,6 @@ yes_or_no = {
     'options': ('yes','no'),
     'validator': pick_one
 }
-
-def pick_first_unanswered(*prompts):
-    """Returns the first prompt for which the storage doesn't have an
-    answer stored yet."""
-    cloned_prompts = map(copy_generator, prompts)
-    while True:
-        ms, session = yield
-        while cloned_prompts:
-            prompt = cloned_prompts.pop()
-            prompt.next()
-            question = prompt.send((ms, session))
-            if not any([question.startswith(key) for key in session]):
-                yield question
-                answer = yield
-                prompt.next()
-                validated_answer = prompt.send(answer)
-                yield validated_answer
-            else:
-                logging.debug('already handled question %s' % question)
-        yield False
-                
 
 
 def do(*callbacks):

@@ -217,6 +217,27 @@ def case(*cases):
         yield False
 
 
+def pick_first_unanswered(*prompts):
+    """Returns the first prompt for which the storage doesn't have an
+    answer stored yet."""
+    cloned_prompts = map(copy_generator, prompts)
+    while True:
+        ms, session = yield
+        while cloned_prompts:
+            prompt = cloned_prompts.pop()
+            prompt.next()
+            question, end_of_session = prompt.send((ms, session))
+            if not any([question.startswith(key) for key in session]):
+                yield question, end_of_session
+                answer = yield
+                prompt.next()
+                validated_answer = prompt.send(answer)
+                yield validated_answer
+            else:
+                logging.debug('already handled question %s' % question)
+        yield False
+
+
 def question(text, options):
     """
     Having python generate prompts & cases for us on the fly. We should probably
