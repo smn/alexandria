@@ -157,4 +157,30 @@ class CombinedCoroutineTestCase(TestCase):
         self.assertEquals(question_text, "What is your age?")
         self.assertFalse(end_of_session)
         
+    def test_case_statements(self):
+        pass
+
+
+class UtilsTestCase(TestCase):
     
+    def setUp(self):
+        pass
+    
+    def test_coroutine_decorator(self):
+        """
+        the coroutine decorator should automatically advance coroutines
+        to their first yield statement; avoiding the initial call to next()
+        """
+        
+        from alexandria.utils import coroutine
+        
+        @coroutine
+        def test_coroutine():
+            while True:
+                a = (yield)
+                yield "got %s" % a
+        
+        tc = test_coroutine()
+        got_b = tc.send("b")
+        
+        self.assertEquals(got_b, "got b")
