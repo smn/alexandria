@@ -1,7 +1,23 @@
 from exceptions import InvalidInputException
 
 def always_true(input, options):
-    """A validator that will never fail. Used as the default validator."""
+    """
+    A validator that will never fail. Used as the default validator.
+    
+    >>> always_true(False, ())
+    True
+    >>> always_true("", ())
+    True
+    >>> always_true([], ())
+    True
+    >>> always_true("grrrr", ())
+    'grrrr'
+    >>> always_true(1, ())
+    1
+    >>>
+    
+    """
+    
     return input or True
 
 def non_empty_string(input, options):
