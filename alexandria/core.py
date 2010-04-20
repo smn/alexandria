@@ -197,7 +197,25 @@ def end(text):
 
 def pick_one(text, options=()):
     raise PendingDeprecationWarning, "not used & not working afaik"
-	return prompt(text, validator=pick_one, options=options)
+    return prompt(text, validator=pick_one, options=options)
+
+
+def case(*cases):
+    """Returns the first prompt for which the test function returns True"""
+    while True:
+        ms, session = yield
+        for test, prompt in cases:
+            if test(ms, session):
+                prompt = copy_generator(prompt)
+                prompt.next()
+                question = prompt.send((ms, session))
+                yield question
+                answer = yield
+                prompt.next()
+                validated_answer = prompt.send(answer)
+                yield validated_answer
+        yield False
+
 
 def question(text, options):
     """
@@ -240,7 +258,6 @@ def question(text, options):
         # this function is returned to the case statement since it requires a 
         # call back and not a result of a function
         def _checker(ms, session):
-            print session[question] == answer
             return session[question] == answer
         return _checker
     
@@ -253,14 +270,15 @@ def question(text, options):
     stack_list.append(prompt(text, options=options.keys()))
     # temporary stack to store cases
     case_list = []
-    # loop over the items with a counter, starting at 1 since we render 
-    # the option list starting at 1
-    for idx, (option, answer) in enumerate(options.items(),start=1):
+    # loop over the items to generate the proper case items
+    for option, answer in options.items():
         # append the check anwer to the case list
         # if check_answer returns true, return the given prompt
         case_list.append(
-            (check_answer(question_text, [str(idx)]), prompt(answer))
+            (check_answer(text, option), prompt(answer))
         )
     # append the unpacked case list to the stack list
     stack_list.append(case(*case_list))
+    
+    return stack_list
 

@@ -8,10 +8,12 @@ INSTALLATION
 
 You'll need to install this stuff
 
+* Python 2.6
 * generator_tools (w/ pip or easy_install)
 * django (for the current database backend)
 * twisted (for the USSD and XMPP runners)
 * wokkel (an XMPP lib on top of Twisted)
+* python-ssmi (from http://github.com/praekelt - which isn't open-sourced yet unfortunately)
 
 To run the tests make sure you have the following packages installed:
 

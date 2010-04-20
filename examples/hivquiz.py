@@ -1,4 +1,4 @@
-from alexandria.core import MenuSystem, prompt, question
+from alexandria.core import MenuSystem, prompt, question, case
 from alexandria.utils import shuffle, table
 from alexandria.validators import pick_one
 from alexandria.utils import msg
@@ -34,23 +34,6 @@ def pick_first_unanswered(*prompts):
                 logging.debug('already handled question %s' % question)
         yield False
                 
-
-
-def case(*cases):
-    """Returns the first prompt for which the test function returns True"""
-    while True:
-        ms, session = yield
-        for test, prompt in cases:
-            if test(ms, session):
-                prompt = copy_generator(prompt)
-                prompt.next()
-                question = prompt.send((ms, session))
-                yield question
-                answer = yield
-                prompt.next()
-                validated_answer = prompt.send(answer)
-                yield validated_answer
-        yield False
 
 
 def do(*callbacks):
