@@ -24,7 +24,6 @@ class MenuSystem(object):
     def __init__(self, *items):
         # a simple linear stack of items to work through
         self.stack = list(items)
-        self.storage = {} # deprecated, waiting on tests before I kill this
         self.__iter_index = 0
     
     def clone(self, **kwargs):
@@ -37,13 +36,6 @@ class MenuSystem(object):
         clone.__iter_index = self.__iter_index
         clone.stack = [copy_generator(stack_item) for stack_item in self.stack]
         return clone
-    
-    def store(self, key, value):
-        """
-        Deprecated, session store is now separate from the menu descriptions
-        """
-        raise PendingDeprecationWarning, "use a session storage instead"
-        self.storage.setdefault(key, []).append(value)
     
     def append(self, *items):
         """
@@ -83,11 +75,6 @@ class MenuSystem(object):
         """
         self.fast_forward(index)
         return self.next()
-    
-    def has_next(self):
-        """Deprecated, Iterator pattern that isn't being used anymore"""
-        raise PendingDeprecationWarning, "no longer being used"
-        return self.__iter_index < len(self.stack)
     
     def next(self):
         """
@@ -196,10 +183,6 @@ def end(text):
     while True:
         ms, session = yield
         yield text, True # True is for, yes, end the session - FIXME!
-
-def pick_one(text, options=()):
-    raise PendingDeprecationWarning, "not used & not working afaik"
-    return prompt(text, validator=pick_one, options=options)
 
 
 def case(*cases):

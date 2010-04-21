@@ -115,7 +115,7 @@ class MenuSystemTestCase(TestCase):
         """
         
         for index, coroutine in iter(self.menu.clone()):
-            print index, coroutine
+            a,b = index, coroutine
         
         
 class PromptTestCase(TestCase):
