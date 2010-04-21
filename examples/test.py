@@ -1,8 +1,8 @@
-from alexandria.client import FakeUSSDClient
-from alexandria.core import MenuSystem, prompt
-from alexandria.exceptions import InvalidInputException
-from alexandria.utils import shuffle, table
-from alexandria.validators import non_empty_string, integer, pick_one
+from alexandria.dsl.client import FakeUSSDClient
+from alexandria.dsl.core import MenuSystem, prompt
+from alexandria.dsl.exceptions import InvalidInputException
+from alexandria.dsl.utils import shuffle, table
+from alexandria.dsl.validators import non_empty_string, integer, pick_one
 import logging
 
 # items can be grouped together and referred to on the fly

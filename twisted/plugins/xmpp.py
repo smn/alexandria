@@ -5,7 +5,7 @@ from twisted.python import usage
 from twisted.plugin import IPlugin
 from twisted.application.service import IServiceMaker
 
-from alexandria.twisted.xmpp import XMPPClient
+from alexandria.dsl.twisted.xmpp import XMPPClient
 
 class Options(usage.Options):
     optParameters = [

@@ -1,7 +1,7 @@
-from alexandria.core import MenuSystem, prompt, question, case, pick_first_unanswered
-from alexandria.utils import shuffle, table
-from alexandria.validators import pick_one
-from alexandria.utils import msg
+from alexandria.dsl.core import MenuSystem, prompt, question, case, pick_first_unanswered
+from alexandria.dsl.utils import shuffle, table
+from alexandria.dsl.validators import pick_one
+from alexandria.dsl.utils import msg
 from generator_tools.copygenerators import copy_generator
 import logging
 

@@ -4,7 +4,7 @@ from twisted.words.protocols.jabber.jid import JID
 from twisted.python import usage
 from wokkel import client, xmppim
 
-from alexandria.client import Client
+from alexandria.dsl.client import Client
 from examples.hivquiz import ms
 
 class AlexandriaXMPPClient(Client):

@@ -19,10 +19,10 @@ class InMemoryBackend(object):
 # FIXME:    This is django ugliness, we should either choose to make the whole
 #           thing a Django app or we should remove the dependency entirely
 import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'alexandria.backends.db.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'alexandria.sessions.db.settings'
 
 from django.conf import settings
-from alexandria.backends.db.models import Client, Item
+from alexandria.sessions.db.models import Client, Item
 
 class DBBackend(object):
     """

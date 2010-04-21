@@ -20,7 +20,7 @@ To run the tests make sure you have the following packages installed:
 * Nose
 * Nose-exclude
 
-Run the tests with `nosetests` from the command line. The file `setup.cfg` specifies the default options for nose.
+Run the tests with `nosetests` from the command line. The file `setup.cfg` specifies the default options for nose. If you want coverage run `nosetests -c coverage.cfg`, it will generate coverage data for the `alexandria` module and generate an HTML report at `tmp/coverage/index.html`.
 
 Currently both `django` and `wokkel` are available in the `./lib/` directory. Add the directory to your `$PYTHONPATH` to be able to load to modules.
 

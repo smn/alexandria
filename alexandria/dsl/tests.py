@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from alexandria.core import (MenuSystem, prompt, end, question, 
+from alexandria.dsl.core import (MenuSystem, prompt, end, question, 
                                 pick_first_unanswered, case)
-from alexandria.utils import msg
-from alexandria.validators import pick_one
+from alexandria.dsl.utils import msg, coroutine
+from alexandria.dsl.validators import pick_one
 
 
 class MenuSystemTestCase(TestCase):
@@ -340,8 +340,6 @@ class UtilsTestCase(TestCase):
         the coroutine decorator should automatically advance coroutines
         to their first yield statement; avoiding the initial call to next()
         """
-        
-        from alexandria.utils import coroutine
         
         @coroutine
         def test_coroutine():

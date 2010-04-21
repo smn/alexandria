@@ -1,4 +1,4 @@
-from alexandria.backends.db.models import *
+from alexandria.sessions.db.models import *
 from django.shortcuts import render_to_response
 from django.utils import simplejson
 from django.http import HttpResponse

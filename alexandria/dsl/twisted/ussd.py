@@ -1,4 +1,4 @@
-from alexandria.client import Client
+from alexandria.dsl.client import Client
 from examples.hivquiz import ms
 import logging
 from ssmi.client import (SSMI_USSD_TYPE_NEW, SSMI_USSD_TYPE_EXISTING, 

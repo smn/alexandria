@@ -1,5 +1,5 @@
-from alexandria.core import MenuSystem, prompt, end
-from alexandria.validators import pick_one
+from alexandria.dsl.core import MenuSystem, prompt, end
+from alexandria.dsl.validators import pick_one
 
 def get_menu():
     return MenuSystem(

@@ -1,7 +1,7 @@
-from alexandria.core import coroutine
-from alexandria.exceptions import InvalidInputException
+from alexandria.dsl.core import coroutine
+from alexandria.dsl.exceptions import InvalidInputException
 from generator_tools.copygenerators import copy_generator
-from alexandria.backend import DBBackend, InMemoryBackend
+from alexandria.dsl.backend import DBBackend, InMemoryBackend
 import logging
 
 

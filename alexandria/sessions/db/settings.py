@@ -16,7 +16,7 @@ DATABASES = {
 }
 
 INSTALLED_APPS = (
-    'alexandria.backends.db'
+    'alexandria.sessions.db'
 )
 
 TEMPLATE_DIRS = (
@@ -27,10 +27,10 @@ MEDIA_ROOT = join(APP_ROOT, 'db', 'media')
 MEDIA_URL = '/static/'
 
 
-ROOT_URLCONF = 'alexandria.backends.db.urls'
+ROOT_URLCONF = 'alexandria.sessions.db.urls'
 
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.contenttypes',
-    'alexandria.backends.db',
+    'alexandria.sessions.db',
 )

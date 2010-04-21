@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
-from alexandria.backends.db import views
+from alexandria.sessions.db import views
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin

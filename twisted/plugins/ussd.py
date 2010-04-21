@@ -6,7 +6,7 @@ from twisted.plugin import IPlugin
 from twisted.application import internet
 from twisted.application.service import IServiceMaker
 
-from alexandria.twisted.ussd import SSMIService
+from alexandria.dsl.twisted.ussd import SSMIService
 from ssmi import SSMIFactory
 from django.utils import importlib
 
