@@ -1,4 +1,4 @@
-from alexandria.dsl.client import FakeUSSDClient
+from alexandria.client import FakeUSSDClient
 from alexandria.dsl.core import MenuSystem, prompt
 from alexandria.dsl.exceptions import InvalidInputException
 from alexandria.dsl.utils import shuffle, table
