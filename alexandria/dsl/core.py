@@ -34,7 +34,7 @@ class MenuSystem(object):
         """
         clone = self.__class__.__new__(self.__class__)
         clone.__iter_index = self.__iter_index
-        clone.stack = [copy_generator(stack_item) for stack_item in self.stack]
+        clone.stack = map(copy_generator, self.stack)
         return clone
     
     def append(self, *items):

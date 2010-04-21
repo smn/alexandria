@@ -9,11 +9,11 @@ class InMemoryBackend(object):
     
     def restore(self, client):
         global ALEXANDRIA_GLOBAL_STATE
-        return ALEXANDRIA_GLOBAL_STATE.setdefault(client.id, {})
+        return ALEXANDRIA_GLOBAL_STATE.setdefault(client.uuid, {})
     
     def save(self, client, state):
         global ALEXANDRIA_GLOBAL_STATE
-        ALEXANDRIA_GLOBAL_STATE[client.id] = state
+        ALEXANDRIA_GLOBAL_STATE[client.uuid] = state
 
 
 # FIXME:    This is django ugliness, we should either choose to make the whole
@@ -33,7 +33,7 @@ class DBBackend(object):
     def __init__(self, client):
         # get a recent client, recent is a client that has connected within
         # the last three minutes
-        self.client = Client.objects.recent(uuid=client.id, 
+        self.client = Client.objects.recent(uuid=client.uuid, 
                                         client_type=client.__class__.__name__)
     
     def restore(self):

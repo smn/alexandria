@@ -106,8 +106,8 @@ class State(object):
 
 
 class Client(object):
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, uuid):
+        self.uuid = uuid
         self.state = State(client=self)
         self.state.restore()
     
