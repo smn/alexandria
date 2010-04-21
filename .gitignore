@@ -5,3 +5,4 @@ tmp/*
 dropin.cache
 *.db
 .coverage
+*,cover
