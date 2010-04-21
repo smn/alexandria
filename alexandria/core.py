@@ -34,8 +34,8 @@ class MenuSystem(object):
         vars are passed by reference
         """
         clone = self.__class__.__new__(self.__class__)
-        clone.__dict__ = self.__dict__.copy()
-        clone.__dict__.update(kwargs)
+        clone.__iter_index = self.__iter_index
+        clone.stack = [copy_generator(stack_item) for stack_item in self.stack]
         return clone
     
     def store(self, key, value):
@@ -55,8 +55,10 @@ class MenuSystem(object):
         return clone
     
     def __iter__(self):
-        raise PendingDeprecationWarning, "no longer in use"
         return self
+    
+    def get_current_index(self):
+        return self.__iter_index
     
     def fast_forward(self, index):
         """
@@ -112,7 +114,7 @@ class MenuSystem(object):
 #
 # This var1, var2 = yield stuff is far too magical for every day use.
 # We should be looking at ways of abstracting this away from every day
-# development. The power of coroutines is in masking blocking processes
+# development. The power of coroutines is in masking blocking I/O
 # as non-blocking
 #
 # We should be able to do the following, this is almost correct pseudo code

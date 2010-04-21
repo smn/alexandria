@@ -1,18 +1,123 @@
 from unittest import TestCase
 
-from alexandria.core import prompt, end, question, pick_first_unanswered
+from alexandria.core import (MenuSystem, prompt, end, question, 
+                                pick_first_unanswered, case)
 from alexandria.utils import msg
 from alexandria.validators import pick_one
 
 
-class MockMenuSystem(object): pass
-
-class AlexandriaTestCase(TestCase):
-    """
-    Lots of work to be done here.
-    """
-    pass
-
+class MenuSystemTestCase(TestCase):
+    
+    def setUp(self):
+        self.menu = MenuSystem(
+            prompt("Prompt 1"),
+            prompt("Prompt 2"),
+            prompt("Prompt 3")
+        )
+    
+    def test_cloning(self):
+        """The menu system should be able to clone itself without any pass by 
+        reference nastiness"""
+        menu_clone = self.menu.clone()
+        self.assertNotEquals(self.menu, menu_clone)
+        self.assertNotEquals(self.menu.stack, menu_clone.stack)
+    
+    def test_appending(self):
+        """
+        append() should clone the menu system and append the given items
+        """
+        menu = self.menu.append(
+            prompt("Prompt 4"),
+            prompt("Prompt 5")
+        )
+        self.assertNotEquals(menu, self.menu)
+        self.assertEquals(len(menu.stack), 5)
+    
+    def test_fast_forwarding(self):
+        """The menu system should be able to fast forward to any point in the
+        stack"""
+        
+        menu = self.menu.clone()
+        self.assertEquals(menu.get_current_index(), 0)
+        
+        menu.fast_forward(1)
+        index, next_prompt = menu.next()
+        
+        # fast forwarded
+        self.assertEquals(index, 2)
+        
+        # advance
+        next_prompt.next()
+        
+        session_store = {}
+        prompt_2, end_of_session = next_prompt.send((menu, session_store))
+        self.assertEquals(prompt_2, "Prompt 2")
+        self.assertFalse(end_of_session)
+    
+    def test_repeat_current_item(self):
+        """
+        repeat_current_item() should repeat the current coroutine by 
+        rewiding the stack by 1 and restarting
+        """
+        
+        menu = self.menu.clone()
+        
+        def _test_repeated_coroutine(index, coroutine):
+            # index is always 1 ahead
+            self.assertEquals(index, 1)
+            # advance
+            coroutine.next()
+            text, end_of_session = coroutine.send((MenuSystem(), {}))
+            self.assertEquals(text, "Prompt 1")
+            self.assertFalse(end_of_session)
+        
+        _test_repeated_coroutine(*menu.next())
+        _test_repeated_coroutine(*menu.repeat_current_item())
+        
+    def test_next_after(self):
+        """
+        next_after() should return the next prompt coming after the given
+        index
+        """
+        
+        menu = self.menu.clone()
+        index, prompt = menu.next_after(1)
+        self.assertEquals(index, 2)
+        
+        def _test_coroutine(coroutine):
+            # advance
+            coroutine.next()
+            text, end_of_session = coroutine.send((MenuSystem(), {}))
+            self.assertEquals(text, "Prompt 2")
+            self.assertFalse(end_of_session)
+        
+        _test_coroutine(prompt)         # these should both return the same text
+        _test_coroutine(menu.stack[1])  # since they should be the same prompt
+    
+    def test_end_of_stack(self):
+        """
+        next() should return None for the next item if the end of the stack
+        has been reached
+        """
+        
+        menu = self.menu.clone()
+        menu.fast_forward(3)
+        index, none = menu.next()
+        self.assertEquals(index, 4)
+        self.assertEquals(none, None)
+    
+    def test_iteration(self):
+        """
+        the menu system should support the normal iterator pattern and 
+        raise a StopIteration when the end of the stack has been reached
+        
+        Not sure if this is even useful.
+        """
+        
+        for index, coroutine in iter(self.menu.clone()):
+            print index, coroutine
+        
+        
 class PromptTestCase(TestCase):
     
     def setUp(self):
@@ -31,7 +136,7 @@ class PromptTestCase(TestCase):
                     options=self.question_options)
         # advance coroutine to yield statement, FIXME use coroutine decorator
         p.next()
-        question, end_of_session = p.send((MockMenuSystem(), self.session_store))
+        question, end_of_session = p.send((MenuSystem(), self.session_store))
         
         self.assertEquals(question, msg(self.question_text, 
                             self.question_options))
@@ -55,7 +160,7 @@ class PromptTestCase(TestCase):
                     options=self.question_options)
         # advance coroutine to yield statement, FIXME use coroutine decorator
         p.next()
-        question, end_of_session = p.send((MockMenuSystem(), self.session_store))
+        question, end_of_session = p.send((MenuSystem(), self.session_store))
         
         self.assertEquals(question, msg(self.question_text, 
                             self.question_options))
@@ -83,7 +188,7 @@ class EndTestCase(TestCase):
         
         e = end("So long, and thanks for all the fish")
         e.next()
-        message, end_of_session = e.send((MockMenuSystem(), {}))
+        message, end_of_session = e.send((MenuSystem(), {}))
         self.assertEquals(message, "So long, and thanks for all the fish")
         self.assertTrue(end_of_session)
 
@@ -107,7 +212,7 @@ class QuestionTestCase(TestCase):
         [prompt, case] = question_stack
         
         prompt.next() # advance coroutine
-        question_text, end_of_session = prompt.send((MockMenuSystem(), {}))
+        question_text, end_of_session = prompt.send((MenuSystem(), {}))
         
         # check that the dictionary keys are correctly translated to options
         # for the prompt
@@ -119,7 +224,7 @@ class QuestionTestCase(TestCase):
         
         # check that the case statements reflect the options
         case.next()
-        response_text, end_of_session = case.send((MockMenuSystem(), {
+        response_text, end_of_session = case.send((MenuSystem(), {
             "Is your right thumb on your left hand?": "no"
         }))
         self.assertEquals(response_text, "Please see a doctor and press 1 "
@@ -148,18 +253,82 @@ class CombinedCoroutineTestCase(TestCase):
                 prompt("What is your age?"),
                 prompt("What is your gender?"))
         
-        pfu.next()
-        [question_text, end_of_session] = pfu.send((MockMenuSystem(), {
+        session_store = {
             "What is your name?": "Simon",
-            "What is your gender?": "Male",
-        }))
+            "What is your gender?": "Male"
+        }
+        
+        pfu.next()
+        [question_text, end_of_session] = pfu.send((MenuSystem(), session_store))
         
         self.assertEquals(question_text, "What is your age?")
         self.assertFalse(end_of_session)
         
+        # advance coroutine
+        pfu.next()
+        validated_answer = pfu.send("29")
+        self.assertEquals(session_store['What is your age?'], '29')
+        
+        # advance coroutine
+        pfu.next()
+        empty_response = pfu.send((MenuSystem(), session_store))
+        # all prompts have been answered, it should yield False
+        self.assertFalse(empty_response)
+        
     def test_case_statements(self):
-        pass
-
+        """
+        case() accepts a list of (callback, coroutine) tuples. 
+        The callback is given the instance of the menu system and the session 
+        store return True or False. 
+        """
+        
+        def test_one(menu_system, session_store):
+            return "one" in session_store
+        
+        def test_two(menu_system, session_store):
+            return "two" in session_store
+        
+        def test_three(menu_system, session_store):
+            return "three" in session_store
+        
+        case_statement = case(
+            (test_one, prompt("test one")),
+            (test_two, prompt("test two")),
+            (test_three, prompt("test three"))
+        )
+        
+        # the first two prompts shouldn't respond with this session store
+        session_store = {
+            "three": "exists"
+        }
+        
+        # advance
+        case_statement.next()
+        response_text, end_of_session = case_statement.send(
+                                            (MenuSystem(), session_store))
+        self.assertEquals(response_text, "test three")
+        self.assertFalse(end_of_session)
+        
+        # advance
+        case_statement.next()
+        validated_answer = case_statement.send("ok")
+        self.assertEquals(validated_answer, "ok")
+    
+    def test_case_statements_with_no_response(self):
+        """
+        case() should return False if none of the callbacks return True
+        """
+        
+        case_statement = case(
+            (lambda ms, session_store: False, prompt("1")),
+            (lambda ms, session_store: False, prompt("2")),
+            (lambda ms, session_store: False, prompt("3")),
+        )
+        
+        # advance
+        case_statement.next()
+        false = case_statement.send((MenuSystem(), {}))
+        self.assertFalse(false)
 
 class UtilsTestCase(TestCase):
     
