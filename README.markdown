@@ -74,7 +74,7 @@ TODO
 
 In order of *importance*:
 
-1. Write tests and documentation
+1. Write tests and documentation 
 
 2. All transports allow a `--menu` option to specify what menu to run.
 
