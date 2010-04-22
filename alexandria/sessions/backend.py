@@ -30,39 +30,37 @@ class DBBackend(object):
     Django ORM. It does this by serializing data as best it can. It's ugly but
     it works, we need something more pluggable and elegant.
     """
-    def __init__(self, client):
-        # get a recent client, recent is a client that has connected within
-        # the last three minutes
-        self.client = Client.objects.recent(uuid=client.uuid, 
-                                        client_type=client.__class__.__name__)
     
-    def restore(self):
+    def restore(self, alexandria_client):
         """
         Restore the current client's session from the database by creating a
         dictionary from the deserialized key/value pairs
         """
+        client = Client.objects.recent(**alexandria_client.uuid())
         return dict([(item.key, item.deserialized_value) for item in \
-                                                self.client.item_set.all()])
+                                                    client.item_set.all()])
     
-    def deactivate(self):
+    def deactivate(self, alexandria_client):
         """
         Deactivate the client, happens when the session's been completed. 
         Makes sure that when the client reconnects a new session starts
         instead of continuing with a completed one.
         """
-        self.client.active = False
-        self.client.save()
+        client = Client.objects.recent(**alexandria_client.uuid())
+        client.active = False
+        client.save()
     
-    def save(self, state):
+    def save(self, alexandria_client, state):
         """
         Serialize the state for the given client to the database, the state
         is a dictionary with key/value pairs.
         """
+        client = Client.objects.recent(**alexandria_client.uuid())
         for key, value in state.items():
             try:
-                item = self.client.item_set.get(key=key)
+                item = client.item_set.get(key=key)
                 item.value = value
                 item.save()
             except Item.DoesNotExist, e:
-                self.client.item_set.create(key=key, value=value)
+                client.item_set.create(key=key, value=value)
         return state
