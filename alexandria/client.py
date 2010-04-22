@@ -1,48 +1,24 @@
-from alexandria.dsl.core import coroutine
 from alexandria.dsl.exceptions import InvalidInputException
+from alexandria.sessions.manager import SessionManager
+from alexandria.sessions.backend import DBBackend
 from generator_tools.copygenerators import copy_generator
-from alexandria.sessions.backend import DBBackend, InMemoryBackend
 import logging
 
-
-class State(object):
-    """
-    The state of a client connecting to the system. 
+class Client(object):
+    def __init__(self, id):
+        self.id = id
+        self.session = SessionManager(client=self, backend=DBBackend())
+        self.session.restore()
     
-    FIXME: This should be in it's own module
-    """
-    
-    def __init__(self, client):
-        self.client = client
-        # FIXME:    the backend should be pluggable from settings, not so 
-        #           deep down in the code
-        self.backend = DBBackend(client)
-    
-    def restore(self):
-        """
-        Restore the current state from the backend
-        
-        FIXME:  This is hideous, we should be providing the backend with some
-                client vars with which it should be able to return the state,
-                passing along the the whole client at __init__ is ugly.
-        """
-        self.data = self.backend.restore()
-    
-    def save(self, deactivate=False):
-        """
-        Save the current state to the backend. Specify deactivate=True if you
-        want to close this session for good.
-        """
-        self.backend.save(self.data)
-        if deactivate:
-            self.backend.deactivate()
+    def uuid(self):
+        return {"uuid": self.id, "client_type": self.__class__.__name__}
     
     def get_previously_sent_item(self, menu_system):
         """
         Get the item that was previously sent to the client. It is needed to 
         be able to determine what question the incoming answer is answering.
         """
-        previous_index = self.data.get('previous_index', None)
+        previous_index = self.session.data.get('previous_index', None)
         # we can't check for just previous_index, since zero resolves to False 
         # in an if statement
         if previous_index >= 0:
@@ -61,7 +37,7 @@ class State(object):
                 # returning session. The incoming answer is an answer to a
                 # question we've sent earlier.
                 item_awaiting_answer.next()
-                question, end_session = item_awaiting_answer.send((menu_system, self.data))
+                question, end_session = item_awaiting_answer.send((menu_system, self.session.data))
                 item_awaiting_answer.next() # proceed to answer, feed manually
                 validated_answer = item_awaiting_answer.send(answer)
             else:
@@ -69,28 +45,28 @@ class State(object):
                 # with a client. We're assuming that the client always initiates
                 # the conversation - which is the case with USSD
                 logging.debug('client initiated contact with: %s' % answer)
-        
+            
             # send output back to the client
-            index, item = menu_system.next_after(self.data.get('previous_index',0))
+            index, item = menu_system.next_after(self.session.data.get('previous_index',0))
             while item:
                 # We loop over the item's since they might not return a question
                 # which means we have to move forward to the next time. Basically
                 # we're looping over items until one returns a question to
                 # send back to the client
-                
+
                 # FIXME: start coroutine, this can be automated with a @decorator
                 item.next()
                 # send the menu system, yields the question
-                question, end_session = item.send((menu_system, self.data)) 
+                question, end_session = item.send((menu_system, self.session.data)) 
                 # coroutines may return empty or False values which means they have
                 # nothing to ask the client
                 if question:
-                    self.client.send(question, end_session)
-                    self.data['previous_index'] = index
+                    self.send(question, end_session)
+                    self.session.data['previous_index'] = index
                     break # break out of ugly `while True:..` loop
                 else:
                     index, item = menu_system.next()
-            
+        
         except InvalidInputException, e:
             # Invalid input exceptions can be raised which means the client didn't 
             # provide correct input for the given question. If that's the case
@@ -98,26 +74,21 @@ class State(object):
             logging.exception(e)
             index, repeat_item = menu_system.repeat_current_item()
             repeat_item.next()
-            repeated_question, end_session = repeat_item.send((menu_system, self.data))
-            self.data['previous_index'] = index
+            repeated_question, end_session = repeat_item.send((menu_system, self.session.data))
+            self.session.data['previous_index'] = index
             logging.debug('repeating current question: %s' % repeated_question)
-            self.client.send(repeated_question, end_session)
-            
-
-
-class Client(object):
-    def __init__(self, uuid):
-        self.uuid = uuid
-        self.state = State(client=self)
-        self.state.restore()
+            self.send(repeated_question, end_session)
+    
+    def send(self, message, end_of_session):
+        raise NotImplementedError, "needs to be subclassed"
     
     def answer(self, message, menu_system):
-        self.state.restore()
-        self.state.next(message, menu_system)
-        self.state.save()
+        self.session.restore()
+        self.next(message, menu_system)
+        self.session.save()
     
     def deactivate(self):
-        self.state.save(deactivate=True)
+        self.session.save(deactivate=True)
 
 
 class FakeUSSDClient(Client):

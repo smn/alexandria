@@ -1,2 +1,2 @@
 #!/bin/bash
-python manage.py reset db --settings=alexandria.backends.db.settings
+python manage.py reset db --settings=alexandria.sessions.db.settings
