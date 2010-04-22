@@ -118,6 +118,9 @@ class Item(models.Model):
         'Tuple'
         >>> item.determine_type(u'Unicode')
         'Unicode'
+        >>> # unknown types should return None
+        >>> item.determine_type(Exception)
+        >>>
         
         """
         for available_type, _ in self.SERIALIZERS:
@@ -131,6 +134,27 @@ class Item(models.Model):
         """
         Returns the deserialized value of the value states been saved in
         serialized state in the database.
+        
+        >>> item = Item(client=Client.objects.create())
+        >>> item.key = "1"
+        >>> item.value = {'foo':'bar'}
+        >>> item.save()
+        >>>
+        >>> pk = item.pk
+        >>> item = Item.objects.get(pk=pk)
+        >>> item.deserialized_value
+        {u'foo': u'bar'}
+        >>>
+        >>> item = Item()
+        >>> item.value_type = 'NonExistent'
+        >>> try: 
+        ...     item.deserialized_value
+        ... except ItemException, e: 
+        ...     print e
+        ... 
+        value_type unknown, unable to deserialize
+        >>> 
+        
         """
         if self.value_type:
             for deserializer_type, deserializer in self.DESERIALIZERS:
@@ -160,6 +184,16 @@ class Item(models.Model):
         return super(Item, self).save(*args, **kwargs)
     
     def __unicode__(self):
+        """
+        >>> item = Item()
+        >>> item.client = Client.objects.create()
+        >>> item.key = "foo"
+        >>> item.value = "bar"
+        >>> item.save()
+        >>> unicode(item)
+        u'foo (String)'
+        >>>
+        """
         return u"%s (%s)" % (self.key, self.value_type)
     
 

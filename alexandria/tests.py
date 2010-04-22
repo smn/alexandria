@@ -5,6 +5,10 @@ from alexandria.dsl.core import (MenuSystem, prompt, end, question,
 from alexandria.dsl.utils import msg, coroutine
 from alexandria.dsl.validators import pick_one
 
+from alexandria.sessions.manager import SessionManager
+from alexandria.sessions.backend import DBBackend
+from alexandria.client import Client
+
 
 class MenuSystemTestCase(TestCase):
     
@@ -351,3 +355,43 @@ class UtilsTestCase(TestCase):
         got_b = tc.send("b")
         
         self.assertEquals(got_b, "got b")
+    
+
+class SessionManagerTestCase(TestCase):
+    
+    def setUp(self):
+        
+        class DummyClient(Client): pass
+        
+        self.session = SessionManager(DummyClient("uuid"), DBBackend())
+        self.original_data = self.session.data = {
+            "string": "bar",
+            "int": "1",
+            "list": [1,2,3,4,5],
+            "dict": {"di":"ct"}
+        }
+    
+    def test_save_and_restore(self):
+        """
+        restore() should retrieve the last session for a specific user.
+        """
+        self.session.save()
+        self.session.restore()
+        self.assertEquals(self.session.data, self.original_data)
+    
+    def test_save_and_deactivate_and_restore(self):
+        """
+        restore() should return an empty session after a save with deactivate=True
+        """
+        self.session.save(deactivate=True)
+        self.session.restore()
+        self.assertEquals(self.session.data, {})
+    
+    def test_save_and_overwrite_existing_key(self):
+        """
+        save() should overwrite keys
+        """
+        self.session.save()
+        self.session.data["string"] = "foo"
+        self.session.save()
+        self.assertEquals(self.session.data["string"], "foo")

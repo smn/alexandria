@@ -1,21 +1,3 @@
-
-class InMemoryBackend(object):
-    """
-    An in memory backend that stores data in a very ugly global
-    variable. NEVER use this in a production environment.
-    """
-    def __init__(self):
-        globals().setdefault('ALEXANDRIA_GLOBAL_STATE',{})
-    
-    def restore(self, client):
-        global ALEXANDRIA_GLOBAL_STATE
-        return ALEXANDRIA_GLOBAL_STATE.setdefault(client.uuid, {})
-    
-    def save(self, client, state):
-        global ALEXANDRIA_GLOBAL_STATE
-        ALEXANDRIA_GLOBAL_STATE[client.uuid] = state
-
-
 # FIXME:    This is django ugliness, we should either choose to make the whole
 #           thing a Django app or we should remove the dependency entirely
 import os

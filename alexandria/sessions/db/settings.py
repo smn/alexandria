@@ -12,6 +12,7 @@ DATABASES = {
         'USER': '',
         'PASSWORD': '',
         'PORT': '',
+        'SUPPORTS_TRANSACTIONS': False,
     }
 }
 
@@ -34,3 +35,5 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'alexandria.sessions.db',
 )
+
+TEST_RUNNER = 'django_nose.run_tests'
