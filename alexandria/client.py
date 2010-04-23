@@ -103,5 +103,6 @@ class FakeUSSDClient(Client):
         if end_session:
             self.deactivate()
             print 'end of menu'
+            sys.exit(0)
     
 

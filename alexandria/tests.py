@@ -3,7 +3,7 @@ from unittest import TestCase
 from alexandria.dsl.core import (MenuSystem, prompt, end, question, 
                                 pick_first_unanswered, case)
 from alexandria.dsl.utils import msg, coroutine
-from alexandria.dsl.validators import pick_one
+from alexandria.dsl.validators import pick_one, integer
 
 from alexandria.sessions.manager import SessionManager
 from alexandria.sessions.backend import DBBackend
@@ -121,7 +121,153 @@ class MenuSystemTestCase(TestCase):
         for index, coroutine in iter(self.menu.clone()):
             a,b = index, coroutine
         
+
+class TestingClient(Client):
+    
+    def __init__(self, *args, **kwargs):
+        self.outbox = []
+        super(TestingClient, self).__init__(*args, **kwargs)
+    
+    def send(self, message, end_of_session):
+        self.outbox.append((message, end_of_session))
+        if end_of_session:
+            self.deactivate()
+    
+
+class ClientTestCase(TestCase):
+    """Testing the generic Client for alexandria"""
+    
+    def setUp(self):
+        pass
+    
+    def tearDown(self):
+        from alexandria.sessions.db.models import Client
+        [c.delete() for c in Client.objects.all()]
+    
+    def test_uuid(self):
+        """
+        the uuid() should return a dictionary with that can be used to look
+        up the last session for the client in the backend. Using dictionary
+        because we can then easily expand the key/values into kwargs for 
+        Django's ORM.
         
+        FIXME: this will probably bite us somewhere
+        """
+        client = TestingClient("test_client")
+        self.assertTrue(isinstance(client.uuid(), dict))
+    
+    def test_stepping_through_system(self):
+        """
+        testing the perfect scenario
+        """
+        
+        client = TestingClient("test_client")
+        menu = MenuSystem(
+            prompt("What is your name?"),
+            prompt("What is your favorite color?", 
+                validator=pick_one,
+                options=(
+                "red", "white", "blue"
+            )),
+            prompt("How old are you?", 
+                validator=integer),
+            end("Thanks & goodbye!")
+        )
+        
+        
+        client.answer("*120*USSD_SHORTCODE#", menu)
+        client.answer("Simon de Haan", menu)
+        client.answer("red", menu)
+        client.answer("29", menu)
+        
+        self.assertEquals(client.outbox, [
+            (msg("What is your name?", ()), False),
+            (msg("What is your favorite color?", ("red","white","blue")), False),
+            (msg("How old are you?", ()), False),
+            (msg("Thanks & goodbye!", ()), True)
+        ])
+    
+    def test_coroutines_returning_nothing(self):
+        """
+        the client should forward to the next coroutine if a given coroutine 
+        does not return a message to return to the client
+        """
+        
+        client = TestingClient("test_client")
+        menu = MenuSystem(
+            prompt("What is your age?", validator=integer),
+            case(
+                (lambda ms, session: False, prompt("This should never be displayed"))
+            ),
+            end("Goodbye!")
+        )
+        
+        client.answer("*120*USSD_SHORTCODE#", menu)
+        client.answer("29", menu)
+        
+        self.assertEquals(client.outbox, [
+            ("What is your age?", False),
+            ("Goodbye!", True)
+        ])
+    
+    def test_validation(self):
+        """
+        the client should repeat the same coroutine if validation for the given
+        input fails
+        """
+        client = TestingClient("test_client")
+        menu = MenuSystem(
+            prompt("What is your favorite color?", 
+                validator=pick_one,
+                options=(
+                "red", "white", "blue"
+            )),
+            prompt("How old are you?", 
+                validator=integer),
+            end("Thanks & goodbye!")
+        )
+        
+        client.answer("*120*USSD_SHORTCODE#", menu)
+        client.answer("yellow", menu)
+        client.answer("red", menu)
+        client.answer("twenty nine", menu)
+        client.answer("29", menu)
+        
+        self.assertEquals(client.outbox, [
+            (msg("What is your favorite color?", ("red","white","blue")), False), # yellow => repeat
+            (msg("What is your favorite color?", ("red","white","blue")), False), # red
+            (msg("How old are you?", ()), False), # twenty nine => repeat
+            (msg("How old are you?", ()), False), # 29
+            (msg("Thanks & goodbye!", ()), True)
+        ])
+    
+    def test_subclassing(self):
+        """
+        The client's send method must be subclassed
+        """
+        
+        client = Client("test_client") # no subclassing
+        menu = MenuSystem(end("thanks!"))
+        
+        self.assertRaises(NotImplementedError, client.answer, "*120*USSD_SHORTCODE#", menu)
+        
+    def test_deactivation(self):
+        """
+        After completing a menu the client should deactivate the session, closing
+        it from further use.
+        """
+        client = TestingClient("test_client")
+        menu = MenuSystem(end("thanks!"))
+        client.answer("*120*USSD_SHORTCODE#", menu)
+        self.assertEquals(client.outbox, [
+            ("thanks!", True)
+        ])
+        
+        from alexandria.sessions.db.models import Client as BackendClient
+        backend_client = BackendClient.objects.filter(**client.uuid())[0]
+        self.assertFalse(backend_client.active)
+        
+
 class PromptTestCase(TestCase):
     
     def setUp(self):
@@ -331,8 +477,7 @@ class CombinedCoroutineTestCase(TestCase):
         
         # advance
         case_statement.next()
-        false = case_statement.send((MenuSystem(), {}))
-        self.assertFalse(false)
+        self.assertFalse(any(case_statement.send((MenuSystem(), {}))))
 
 class UtilsTestCase(TestCase):
     
@@ -389,9 +534,15 @@ class SessionManagerTestCase(TestCase):
     
     def test_save_and_overwrite_existing_key(self):
         """
-        save() should overwrite keys
+        save() should overwrite keys that already exist in the database
+        
+        FIXME: this test is flakey, probably a tell-tale sign of a bad idea
+                at a lower level
         """
         self.session.save()
-        self.session.data["string"] = "foo"
+        self.session.data = {
+            "string": "foo"
+        }
         self.session.save()
         self.assertEquals(self.session.data["string"], "foo")
+    

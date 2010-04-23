@@ -199,7 +199,7 @@ def case(*cases):
                 prompt.next()
                 validated_answer = prompt.send(answer)
                 yield validated_answer
-        yield False
+        yield False, False # no message and not end of menu
 
 
 def pick_first_unanswered(*prompts):
@@ -220,7 +220,7 @@ def pick_first_unanswered(*prompts):
                 yield validated_answer
             else:
                 logging.debug('already handled question %s' % question)
-        yield False
+        yield False, False # no message and not end of menu
 
 
 def question(text, options):
