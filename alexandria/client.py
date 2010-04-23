@@ -102,7 +102,7 @@ class FakeUSSDClient(Client):
         print self.format(text)
         if end_session:
             self.deactivate()
-            print 'end of menu'
+            import sys
             sys.exit(0)
     
 
