@@ -6,3 +6,4 @@ dropin.cache
 *.db
 .coverage
 *,cover
+nosetests.xml
