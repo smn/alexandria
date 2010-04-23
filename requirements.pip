@@ -1,8 +1,8 @@
-generator_tools=0.3.6
-twisted=10.0.0
-wokkel=0.6.3
-nose=0.11.3
-nose-exclude=0.1.5
+generator_tools==0.3.6
+twisted==10.0.0
+wokkel==0.6.3
+nose==0.11.3
+nose-exclude==0.1.5
 git+git://github.com/django/django.git#egg=django
 git+git://github.com/jbalogh/django-nose.git#egg=django-nose
-git+git://github.com/praekelt/python-ssmi.git#egg=python-ssmi
+git+ssh://git@github.com:praekelt/python-ssmi.git#egg=python-ssmi
