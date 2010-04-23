@@ -42,6 +42,7 @@ class ClientTestCase(TestCase):
         pass
     
     def test_repr(self):
+        # silly
         c = Client()
         self.assertEquals(unicode(c), u"Client")
     
