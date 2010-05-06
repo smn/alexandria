@@ -1,7 +1,7 @@
 *.pyc
 .DS_Store
-logs/*
-tmp/*
+src/logs/*
+src/tmp/*
 dropin.cache
 *.db
 .coverage
