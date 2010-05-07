@@ -136,6 +136,15 @@ class TestingClient(Client):
             self.deactivate()
     
 
+
+class DumbClient(Client):
+    
+    def __init__(self):
+        self.id = "test_client"
+        self.session_manager = SessionManager(client=self, backend=DBBackend())
+        self.session_manager.restore()
+    
+
 class ClientTestCase(TestCase):
     """Testing the generic Client for alexandria"""
     
@@ -247,8 +256,7 @@ class ClientTestCase(TestCase):
         """
         The client's send method must be subclassed
         """
-        
-        client = Client("test_client") # no subclassing
+        client = DumbClient()
         menu = MenuSystem(end("thanks!"))
         
         self.assertRaises(NotImplementedError, client.answer, "*120*USSD_SHORTCODE#", menu)
@@ -508,9 +516,8 @@ class SessionManagerTestCase(TestCase):
     
     def setUp(self):
         
-        class DummyClient(Client): pass
-        
-        self.session = SessionManager(DummyClient("uuid"), DBBackend())
+        client = DumbClient()
+        self.session = client.session_manager
         self.original_data = self.session.data = {
             "string": "bar",
             "int": "1",

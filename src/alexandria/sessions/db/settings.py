@@ -12,9 +12,15 @@ DATABASES = {
         'USER': '',
         'PASSWORD': '',
         'PORT': '',
-        'SUPPORTS_TRANSACTIONS': False,
     }
 }
+
+# For some reason nosedjango breaks over transaction management with sqlite3
+# in this project. This avoids the problem by disabling transaction management
+# completely. For now this is alright since we need to find a better way
+# of testing stuff without a db or a django backend anyway.
+if DATABASES['default']['ENGINE'].endswith('sqlite3'):
+    DISABLE_TRANSACTION_MANAGEMENT = True
 
 INSTALLED_APPS = (
     'alexandria.sessions.db'
