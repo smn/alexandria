@@ -1,9 +1,12 @@
 *.pyc
 .DS_Store
-src/logs/*
-src/tmp/*
+logs/*
+tmp/*
 dropin.cache
 *.db
 .coverage
 *,cover
 nosetests.xml
+ve/*
+src/*.egg-info
+pip-log.txt

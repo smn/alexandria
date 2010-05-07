@@ -124,10 +124,12 @@ class MenuSystemTestCase(TestCase):
 
 class TestingClient(Client):
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, id):
         self.outbox = []
-        super(TestingClient, self).__init__(*args, **kwargs)
-    
+        self.id = id
+        self.session_manager = SessionManager(client=self, backend=DBBackend())
+        self.session_manager.restore()
+     
     def send(self, message, end_of_session):
         self.outbox.append((message, end_of_session))
         if end_of_session:

@@ -5,6 +5,8 @@ from twisted.python import usage
 from wokkel import client, xmppim
 
 from alexandria.client import Client
+from alexandria.sessions.manager import SessionManager
+from alexandria.sessions.backend import DBBackend
 from examples.hivquiz import ms
 
 class AlexandriaXMPPClient(Client):
@@ -12,6 +14,8 @@ class AlexandriaXMPPClient(Client):
     def __init__(self, recipient, reply_callback):
         self.id = recipient
         self.reply_callback = reply_callback
+        self.session_manager = SessionManager(client=self, backend=DBBackend())
+        self.session_manager.restore()
     
     def send(self, message):
         self.reply_callback(self.id, message)

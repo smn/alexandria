@@ -1,14 +1,12 @@
 from alexandria.dsl.exceptions import InvalidInputException
-from alexandria.sessions.manager import SessionManager
-from alexandria.sessions.backend import DBBackend
 from generator_tools.copygenerators import copy_generator
 import logging
 
 class Client(object):
-    def __init__(self, id):
+    def __init__(self, id, session_manager):
         self.id = id
-        self.session = SessionManager(client=self, backend=DBBackend())
-        self.session.restore()
+        self.session_manager = session_manager
+        self.session_manager.restore()
     
     def uuid(self):
         return {"uuid": self.id, "client_type": self.__class__.__name__}
@@ -18,7 +16,7 @@ class Client(object):
         Get the item that was previously sent to the client. It is needed to 
         be able to determine what question the incoming answer is answering.
         """
-        previous_index = self.session.data.get('previous_index', None)
+        previous_index = self.session_manager.data.get('previous_index', None)
         # we can't check for just previous_index, since zero resolves to False 
         # in an if statement
         if previous_index >= 0:
@@ -37,7 +35,7 @@ class Client(object):
                 # returning session. The incoming answer is an answer to a
                 # question we've sent earlier.
                 item_awaiting_answer.next()
-                question, end_session = item_awaiting_answer.send((menu_system, self.session.data))
+                question, end_session = item_awaiting_answer.send((menu_system, self.session_manager.data))
                 item_awaiting_answer.next() # proceed to answer, feed manually
                 validated_answer = item_awaiting_answer.send(answer)
             else:
@@ -47,7 +45,7 @@ class Client(object):
                 logging.debug('client initiated contact with: %s' % answer)
             
             # send output back to the client
-            index, item = menu_system.next_after(self.session.data.get('previous_index',0))
+            index, item = menu_system.next_after(self.session_manager.data.get('previous_index',0))
             while item:
                 # We loop over the item's since they might not return a question
                 # which means we have to move forward to the next time. Basically
@@ -57,12 +55,12 @@ class Client(object):
                 # FIXME: start coroutine, this can be automated with a @decorator
                 item.next()
                 # send the menu system, yields the question
-                question, end_session = item.send((menu_system, self.session.data)) 
+                question, end_session = item.send((menu_system, self.session_manager.data)) 
                 # coroutines may return empty or False values which means they have
                 # nothing to ask the client
                 if question:
                     self.send(question, end_session)
-                    self.session.data['previous_index'] = index
+                    self.session_manager.data['previous_index'] = index
                     break # break out of ugly `while True:..` loop
                 else:
                     index, item = menu_system.next()
@@ -74,8 +72,8 @@ class Client(object):
             logging.exception(e)
             index, repeat_item = menu_system.repeat_current_item()
             repeat_item.next()
-            repeated_question, end_session = repeat_item.send((menu_system, self.session.data))
-            self.session.data['previous_index'] = index
+            repeated_question, end_session = repeat_item.send((menu_system, self.session_manager.data))
+            self.session_manager.data['previous_index'] = index
             logging.debug('repeating current question: %s' % repeated_question)
             self.send(repeated_question, end_session)
     
@@ -83,12 +81,12 @@ class Client(object):
         raise NotImplementedError, "needs to be subclassed"
     
     def answer(self, message, menu_system):
-        self.session.restore()
+        self.session_manager.restore()
         self.next(message, menu_system)
-        self.session.save()
+        self.session_manager.save()
     
     def deactivate(self):
-        self.session.save(deactivate=True)
+        self.session_manager.save(deactivate=True)
 
 
 class FakeUSSDClient(Client):
