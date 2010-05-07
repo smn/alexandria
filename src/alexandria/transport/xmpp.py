@@ -7,7 +7,6 @@ from wokkel import client, xmppim
 from alexandria.client import Client
 from alexandria.sessions.manager import SessionManager
 from alexandria.sessions.backend import DBBackend
-from examples.hivquiz import ms
 
 class AlexandriaXMPPClient(Client):
     
@@ -17,14 +16,14 @@ class AlexandriaXMPPClient(Client):
         self.session_manager = SessionManager(client=self, backend=DBBackend())
         self.session_manager.restore()
     
-    def send(self, message):
+    def send(self, message, end_of_session):
         self.reply_callback(self.id, message)
     
 
 class MessageHandler(xmppim.MessageProtocol):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, menu_system, *args, **kwargs):
         super(MessageHandler, self).__init__(*args, **kwargs)
-        self.ms = ms.clone()
+        self.menu_system = menu_system.clone()
         self.clients = {}
     
     def connectionMade(self):
@@ -38,7 +37,7 @@ class MessageHandler(xmppim.MessageProtocol):
         if msg["type"] == 'chat' and hasattr(msg, "body") and msg.body:
             client = self.clients.setdefault(msg['from'], \
                                 AlexandriaXMPPClient(msg['from'], self._reply))
-            client.answer(str(msg.body), self.ms)
+            client.answer(str(msg.body), self.menu_system)
     
     def _reply(self, recipient, message):
         reply = domish.Element((None, "message"))
@@ -94,7 +93,7 @@ class RosterHandler(xmppim.RosterClientProtocol):
 
 class XMPPClient(client.XMPPClient):
     
-    def __init__(self, username, password, host, port):
+    def __init__(self, menu_system, username, password, host, port):
         super(XMPPClient, self).__init__(JID(username), password, host, port)
         self.logTraffic = False
         
@@ -106,7 +105,7 @@ class XMPPClient(client.XMPPClient):
         # roster_handler = RosterHandler()
         # roster_handler.setHandlerParent(self)
         
-        message_handler = MessageHandler()
+        message_handler = MessageHandler(menu_system)
         message_handler.setHandlerParent(self)
         
     

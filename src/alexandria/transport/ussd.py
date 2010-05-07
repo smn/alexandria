@@ -1,7 +1,6 @@
 from alexandria.client import Client
 from alexandria.sessions.manager import SessionManager
 from alexandria.sessions.backend import DBBackend
-from examples.hivquiz import ms
 import logging
 from ssmi.client import (SSMI_USSD_TYPE_NEW, SSMI_USSD_TYPE_EXISTING, 
                             SSMI_USSD_TYPE_END, SSMI_USSD_TYPE_TIMEOUT)
@@ -10,7 +9,7 @@ class AlexandriaSSMIClient(Client):
     
     def __init__(self, msisdn, send_callback):
         self.id = msisdn
-        self.session_manager = SessionManager(client=self, backend=DBBackend)
+        self.session_manager = SessionManager(client=self, backend=DBBackend())
         self.session_manager.restore()
         self.send_callback = send_callback
     

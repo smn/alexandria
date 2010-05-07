@@ -6,13 +6,15 @@ from twisted.plugin import IPlugin
 from twisted.application.service import IServiceMaker
 
 from alexandria.transport.xmpp import XMPPClient
+from django.utils import importlib
 
 class Options(usage.Options):
     optParameters = [
-        ["username", "u", None, "XMPP username."],
-        ["password", "p", '', "XMPP password."],
-        ["host", "h", 'talk.google.com', "XMPP host."],
-        ["port", None, 5222, "XMPP host's port."],
+        ["xmpp-username", "u", None, "XMPP username.", str],
+        ["xmpp-password", "p", '', "XMPP password.", str],
+        ["xmpp-host", "h", 'talk.google.com', "XMPP host.", str],
+        ["xmpp-port", None, 5222, "XMPP host's port.", int],
+        ["menu", "m", '', 'The menu system to run', str]
     ]
 
 
@@ -23,8 +25,17 @@ class XMPPServiceMaker(object):
     options = Options
     
     def makeService(self, options):
-        if 'p' not in options:
-            options['password'] = getpass('password for %s: ' % options['username'])
-        return XMPPClient(**options)
+        if not options['xmpp-password']:
+            options['xmpp-password'] = getpass('password for %s: ' % \
+                                                    options['xmpp-username'])
+        if not options['menu']:
+            raise RuntimeError, 'please specify the menu to run with --menu='
+        menu_module = importlib.import_module(options['menu'])
+        menu_system = menu_module.get_menu()
+        
+        return XMPPClient(menu_system, username=options['xmpp-username'],
+                            password=options['xmpp-password'],
+                            host=options['xmpp-host'],
+                            port=options['xmpp-port'])
 
 serviceMaker = XMPPServiceMaker()

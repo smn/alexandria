@@ -12,11 +12,11 @@ from django.utils import importlib
 
 class Options(usage.Options):
     optParameters = [
-        ["username", "u", '', "SSMI username"],
-        ["password", "pw", '', "SSMI password"],
-        ["host", "h", '', "SSMI host"],
-        ["port", "p", '', "SSMI host's port"],
-        ['menu', 'm', None, 'The menu system to run']
+        ["ssmi-username", "u", '', "SSMI username", str],
+        ["ssmi-password", "pw", '', "SSMI password", str],
+        ["ssmi-host", "h", '', "SSMI host"],
+        ["ssmi-port", "p", '', "SSMI host's port", int],
+        ['menu', 'm', '', 'The menu system to run', str]
     ]
 
 
@@ -27,6 +27,8 @@ class SSMIServiceMaker(object):
     options = Options
     
     def makeService(self, options):
+        if not options['menu']:
+            raise RuntimeError, 'please specify the menu to run with --menu='
         menu_module = importlib.import_module(options['menu'])
         menu_system = menu_module.get_menu()
         
@@ -36,10 +38,11 @@ class SSMIServiceMaker(object):
                 options[key] = getpass('%s: ' % key)
         
         def app_register(ssmi_protocol):
-            return SSMIService(menu_system, options['username'], options['password']) \
-                                .register_ssmi(ssmi_protocol)
+            return SSMIService(menu_system, options['ssmi-username'], 
+                                            options['ssmi-password']) \
+                                            .register_ssmi(ssmi_protocol)
         
-        return internet.TCPClient(options['host'], int(options['port']), 
+        return internet.TCPClient(options['ssmi-host'], int(options['ssmi-port']), 
                             SSMIFactory(app_register_callback=app_register))
 
 
