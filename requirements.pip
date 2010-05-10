@@ -3,6 +3,7 @@ twisted==10.0.0
 wokkel==0.6.3
 nose==0.11.3
 pyOpenSSL==0.10
+PyYAML==3.09
 -e git+git://github.com/django/django.git#egg=django
 -e git+git@github.com:praekelt/python-ssmi.git#egg=python-ssmi
 -e git+git://github.com/inoi/nosedjango.git#egg=nosedjango
