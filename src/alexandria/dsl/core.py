@@ -42,8 +42,8 @@ class MenuSystem(object):
         Clone the stack and append *items to it. Appended items need to be
         coroutines.
         """
+        self.stack.extend(list(items))
         clone = self.clone()
-        clone.stack.extend(list(items))
         return clone
     
     def __iter__(self):

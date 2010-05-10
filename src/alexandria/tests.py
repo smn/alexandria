@@ -555,3 +555,19 @@ class SessionManagerTestCase(TestCase):
         self.session.save()
         self.assertEquals(self.session.data["string"], "foo")
     
+
+
+from alexandria.loader.base import YAMLLoader
+
+class YAMLLoaderTestCase(TestCase):
+    
+    def setUp(self):
+        self.loader = YAMLLoader()
+    
+    def tearDown(self):
+        pass
+    
+    def test_loading_of_yaml_file(self):
+        menu = self.loader.load_file(open('src/alexandria/examples/devquiz.yaml', 'r'))
+        self.assertEquals(len(menu.stack), 4)
+        
