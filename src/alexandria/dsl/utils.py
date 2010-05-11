@@ -54,6 +54,42 @@ def coroutine(func):
     return start
 
 
+def dump_item(item):
+    """
+    Dump the output of a menu item.
+    
+    Not guaranteed to always work for all menu items but handy for tests
+    nonetheless.
+    
+    >>> from alexandria.dsl.core import prompt
+    >>> from alexandria.dsl.validators import pick_one
+    >>> dump_item(prompt('Question?', options=['yes','no']))
+    ('Question?\\n1: yes\\n2: no', False)
+    >>>
+    
+    """
+    item.next() # manually advance
+    return item.send((None, {})) # fake menu system & session store
+
+def dump_menu(menu):
+    """
+    Dump the output of a menu
+    
+    Not guaranteed to always work for all menus since it doesn't account
+    for any given input.
+    
+    >>> from alexandria.dsl.core import MenuSystem, prompt, end
+    >>> from alexandria.dsl.validators import pick_one
+    >>> menu = MenuSystem(
+    ...     prompt('Question?', options=['a','b']),
+    ...     end('Bye!'))
+    >>>
+    >>> dump_menu(menu)
+    [('Question?\\n1: a\\n2: b', False), ('Bye!', True)]
+    """
+    return map(dump_item, [item for idx, item in iter(menu) if item])
+
+
 def table(header, data):
     """
     Print a pretty table for in the console, nice for debugging the state.

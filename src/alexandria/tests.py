@@ -558,6 +558,7 @@ class SessionManagerTestCase(TestCase):
 
 
 from alexandria.loader.base import YAMLLoader
+from alexandria.dsl.utils import dump_menu, msg
 
 class YAMLLoaderTestCase(TestCase):
     
@@ -568,6 +569,34 @@ class YAMLLoaderTestCase(TestCase):
         pass
     
     def test_loading_of_yaml_file(self):
-        menu = self.loader.load_file(open('src/alexandria/examples/devquiz.yaml', 'r'))
+        """
+        Just testing loading & getting of menu items, not the content
+        of the file.
+        """
+        menu = self.loader.load_from_file(open('src/alexandria/examples/devquiz.yaml', 'r'))
         self.assertEquals(len(menu.stack), 4)
+        self.assertEquals(dump_menu(menu), [
+            (msg('What is your favorite programming language?', [
+                    'java', 
+                    'c', 
+                    'python', 
+                    'ruby', 
+                    'javascript', 
+                    'php', 
+                    'other']), False),
+            (msg('What is your favorite development operating system?', [
+                    'windows', 
+                    'apple', 
+                    '*nix', 
+                    'other']), False),
+            (msg('What is your favorite development environment?', [
+                    'netbeans', 
+                    'eclipse', 
+                    'vim', 
+                    'emacs', 
+                    'textmate', 
+                    'notepad']), False),
+            (msg('Thanks! You have completed the quiz.', []), True)
+        ])
+    
         

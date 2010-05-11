@@ -2,38 +2,30 @@ from alexandria.dsl.core import MenuSystem, prompt, end
 from alexandria.dsl.validators import pick_one
 
 class Loader(object):
-    pass
-
-class Dispatcher(object):
-    def create_prompt(self, *args, **kwargs):
+    
+    def do_question(self, *args, **kwargs):
         return prompt(*args, validator=pick_one, **kwargs)
     
-    def create_end(self, *args, **kwargs):
+    def do_end(self, *args, **kwargs):
         return end(*args)
     
-    def dispatch(self, key, *args, **kwargs):
-        mapping = {
-            'question': self.create_prompt,
-            'end': self.create_end
-        }
-        return mapping[key](*args, **kwargs)
+    def error(self, command):
+        raise RuntimeError, "No dispatcher available for command %s" % command
     
-
-class YAMLLoader(Loader):
+    def dispatch(self, command, *args, **kwargs):
+        mname = 'do_' + command
+        if hasattr(self, mname):
+            method = getattr(self, mname)
+            return method(*args, **kwargs)
+        else:
+            self.error(command)
     
-    def __init__(self):
-        self.dispatcher = Dispatcher()
-    
-    def load_file(self, fp):
-        """Load a menu from the given file"""
-        return self.load_string(''.join(fp.readlines()))
-    
-    def load_dict(self, item):
+    def load_from_dict(self, dictionary):
         """
         Depends on the order of keys, works for YAML but is flakely nontheless
         
-        >>> loader = YAMLLoader()
-        >>> item = loader.load_dict({
+        >>> loader = Loader()
+        >>> item = loader.load_from_dict({
         ...     'question': 'What is your favorite color?',
         ...     'options': ['red','white','blue']
         ... })
@@ -44,19 +36,27 @@ class YAMLLoader(Loader):
         
         """
         # the first key in the sequence is the key for the dispatcher
-        menu_type = item.keys()[0]
+        menu_type = dictionary.keys()[0]
         # all other keys are keys for the dispatcher kwargs
-        menu_option_keys = item.keys()[1:]
-        return self.dispatcher.dispatch(menu_type, item[menu_type], \
-            **dict([(key, item[key]) for key in menu_option_keys]))
+        menu_option_keys = dictionary.keys()[1:]
+        return self.dispatch(menu_type, dictionary[menu_type], \
+            **dict([(key, dictionary[key]) for key in menu_option_keys]))
         
     
-    def load_string(self, string):
+    
+
+class YAMLLoader(Loader):
+    
+    def load_from_file(self, fp):
+        """Load a menu from the given file"""
+        return self.load_from_string(''.join(fp.readlines()))
+    
+    def load_from_string(self, string):
         """
         Load a menu from a YAML description
         
         >>> loader = YAMLLoader()
-        >>> menu = loader.load_string(\"\"\"
+        >>> menu = loader.load_from_string(\"\"\"
         ... - question: What is your favorite color?
         ...   options:
         ...     - red
@@ -75,5 +75,5 @@ class YAMLLoader(Loader):
         import yaml
         menu = MenuSystem()
         for item in yaml.safe_load(string):
-            menu.append(self.load_dict(item))
+            menu.append(self.load_from_dict(item))
         return menu
