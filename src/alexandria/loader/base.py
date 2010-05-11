@@ -22,19 +22,58 @@ class Dispatcher(object):
 class YAMLLoader(Loader):
     
     def __init__(self):
-        pass
+        self.dispatcher = Dispatcher()
     
     def load_file(self, fp):
         """Load a menu from the given file"""
         return self.load_string(''.join(fp.readlines()))
     
+    def load_dict(self, item):
+        """
+        Depends on the order of keys, works for YAML but is flakely nontheless
+        
+        >>> loader = YAMLLoader()
+        >>> item = loader.load_dict({
+        ...     'question': 'What is your favorite color?',
+        ...     'options': ['red','white','blue']
+        ... })
+        >>> item.next() # manually advance
+        >>> item.send((None, {})) # fake feed of menu and session store
+        ('What is your favorite color?\\n1: red\\n2: white\\n3: blue', False)
+        >>> 
+        
+        """
+        # the first key in the sequence is the key for the dispatcher
+        menu_type = item.keys()[0]
+        # all other keys are keys for the dispatcher kwargs
+        menu_option_keys = item.keys()[1:]
+        return self.dispatcher.dispatch(menu_type, item[menu_type], \
+            **dict([(key, item[key]) for key in menu_option_keys]))
+        
+    
     def load_string(self, string):
+        """
+        Load a menu from a YAML description
+        
+        >>> loader = YAMLLoader()
+        >>> menu = loader.load_string(\"\"\"
+        ... - question: What is your favorite color?
+        ...   options:
+        ...     - red
+        ...     - white
+        ...     - blue
+        ... \"\"\")
+        >>> index, item = menu.next()
+        >>> index # the index of the next menu
+        1
+        >>> item.next() # manually advance
+        >>> item.send((None, {})) # fake feed of menu and session store
+        ('What is your favorite color?\\n1: red\\n2: white\\n3: blue', False)
+        >>> 
+        
+        """
         import yaml
         menu = MenuSystem()
-        dispatcher = Dispatcher()
         for item in yaml.safe_load(string):
-            menu_type = item.keys()[0]
-            menu_option_keys = item.keys()[1:]
-            menu.append(dispatcher.dispatch(menu_type, item[menu_type], \
-                **dict([(key, item[key]) for key in menu_option_keys])))
+            menu.append(self.load_dict(item))
         return menu
