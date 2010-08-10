@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>USSD dev quiz results</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Simon de Haan">
+    <link rel="stylesheet" href="/static/css/quiz.css" type="text/css" media="screen" charset="utf-8">
+	<script src="/static/js/raphael-min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/static/js/g.raphael-min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/static/js/g.pie-min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/static/js/prototype.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+        
+        window.onload = function () {
+            data = {{json|safe}}
+            $H(data).each(create_graph);
+        };
+        
+        function create_graph(pair, index) {
+            div = create_container(index);
+            if($H(pair.value).size() > 1) {
+                plot_data(div, pair.key, $H(pair.value));
+            }
+        }
+        
+        function plot_data(container, question, answers) {
+            var r = Raphael(container.readAttribute('id'));
+            r.g.txtattr.font = "12px 'Fontin Sans', Fontin-Sans, sans-serif";
+            
+            r.g.text(320, 100, question).attr({"font-size": 20});
+            
+            values = []
+            legends = []
+            answers.each(function(pair, index) {
+                values.push(pair.value);
+                legends.push("%%.%% " + pair.key);
+            })
+            
+            var pie = r.g.piechart(320, 240, 80,
+                values,
+                // [55, 20, 13, 32, 5, 1, 2, 10], 
+                {
+                    legend: legends, //["%%.%% – Enterprise Users", "IE Users"], 
+                    legendpos: "west", 
+                    // href: ["http://raphaeljs.com", "http://g.raphaeljs.com"]
+                });
+            
+            pie.hover(function () {
+                this.sector.stop();
+                this.sector.scale(1.1, 1.1, this.cx, this.cy);
+                if (this.label) {
+                    this.label[0].stop();
+                    this.label[0].scale(1.5);
+                    this.label[1].attr({"font-weight": 800});
+                }
+            }, function () {
+                this.sector.animate({scale: [1, 1, this.cx, this.cy]}, 500, "bounce");
+                if (this.label) {
+                    this.label[0].animate({scale: 1}, 500, "bounce");
+                    this.label[1].attr({"font-weight": 400});
+                }
+            });
+            
+        }
+        
+        function create_container(index) {
+            $('graphs').insert({
+                'bottom':'<div class="ussd_graph" id="holder_'+index+'"></div>',
+            });
+            return $('holder_'+index);
+        }
+    </script>
+    
+	<!-- Date: 2010-03-09 -->
+</head>
+<body class="raphael" id="graphs">
+</body>
+</html>
