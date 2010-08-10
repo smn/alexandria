@@ -28,6 +28,7 @@ class Client(object):
         input coming from the client.
         """
         # check what item was sent previously
+        end_session = True
         try:
             item_awaiting_answer = self.get_previously_sent_item(menu_system)
             if item_awaiting_answer:
@@ -76,6 +77,8 @@ class Client(object):
             self.session_manager.data['previous_index'] = index
             logging.debug('repeating current question: %s' % repeated_question)
             self.send(repeated_question, end_session)
+        finally:
+            self.save_state(end_session)
     
     def send(self, message, end_of_session):
         raise NotImplementedError, "needs to be subclassed"
@@ -83,7 +86,10 @@ class Client(object):
     def answer(self, message, menu_system):
         self.session_manager.restore()
         self.next(message, menu_system)
-        self.session_manager.save()
+        # self.session_manager.save()
+    
+    def save_state(self, eom):
+        self.session_manager.save(deactivate=eom)
     
     def deactivate(self):
         self.session_manager.save(deactivate=True)
