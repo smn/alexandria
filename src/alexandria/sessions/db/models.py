@@ -19,7 +19,7 @@ class ClientTimeLimitManager(models.Manager):
                     .get_query_set() \
                     .get(uuid=uuid, 
                             client_type=client_type,
-                            created_at__gte=datetime.now() - self.TIME_LIMIT,
+                            updated_at__gte=datetime.now() - self.TIME_LIMIT,
                             # active=True)
                             )
             if not client.active:
