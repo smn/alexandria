@@ -5,7 +5,7 @@ from datetime import timedelta, datetime
 
 class ClientTimeLimitManager(models.Manager):
     
-    TIME_LIMIT = timedelta(minutes=3)
+    TIME_LIMIT = timedelta(minutes=15)
     
     def recent(self, uuid, client_type):
         """
