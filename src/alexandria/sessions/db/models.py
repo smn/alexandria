@@ -15,12 +15,18 @@ class ClientTimeLimitManager(models.Manager):
         If none exists then it'll create a new client for a new session.
         """
         try:
-            return super(ClientTimeLimitManager, self) \
+            client = super(ClientTimeLimitManager, self) \
                     .get_query_set() \
                     .get(uuid=uuid, 
                             client_type=client_type,
                             created_at__gte=datetime.now() - self.TIME_LIMIT,
-                            active=True)
+                            # active=True)
+                            )
+            if not client.active:
+                client.item_set.filter(key='previous_index').delete()
+                client.active=True
+                client.save()
+            return client
         except Client.DoesNotExist, e:
             return Client.objects.create(uuid=uuid, client_type=client_type)
         

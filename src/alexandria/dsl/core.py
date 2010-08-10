@@ -155,15 +155,17 @@ class MenuSystem(object):
 # 
 
 # FIXME: Use @coroutine decorator
-def prompt(text, validator=always_true, options=()):
+def prompt(text, validator=always_true, save_as=None, options=()):
     """
     Prompt the user with a question, possibly multiple choice. 
     Read the answer, validate it and store it in the session store.
     """
+    save_as = save_as or text
     while True: # allows coroutines to be re-run
         # get menu system & session store
         ms, session = yield
         question = msg(text, options)
+        question = question % session
         # return question & boolean indicating end of session
         # FIXME: boolean is ugly
         yield question, False
@@ -172,7 +174,7 @@ def prompt(text, validator=always_true, options=()):
         # validate
         validated_answer = validator(answer, options)
         # store question & validated answer
-        session[text] = validated_answer
+        session[save_as] = validated_answer
         # return validated answer
         yield validated_answer
 

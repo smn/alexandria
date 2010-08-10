@@ -19,8 +19,12 @@ class DBBackend(object):
         dictionary from the deserialized key/value pairs
         """
         client = Client.objects.recent(**alexandria_client.uuid())
-        return dict([(item.key, item.deserialized_value) for item in \
+        session = dict([(item.key, item.deserialized_value) for item in \
                                                     client.item_set.all()])
+        session.update({
+            'msisdn': alexandria_client.id
+        })
+        return session
     
     def deactivate(self, alexandria_client):
         """
