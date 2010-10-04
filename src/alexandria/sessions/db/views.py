@@ -5,7 +5,7 @@ from django.http import HttpResponse
 
 def _get_data():
     data = {}
-    for item in Item.objects.filter(key__in=['name', 'industry', 'expectations']):
+    for item in Item.objects.filter(key__in=['name', 'phone', 'technology', 'useful']):
         question_container = data.setdefault(item.key, {})
         question_container.setdefault(item.value, 0)
         question_container[item.value] += 1
