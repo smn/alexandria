@@ -8,17 +8,17 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import copy
 
-# setup logging, printing everything will make you cross eyed, trust me
-logger = logging.getLogger()
-logger.name = "alexandria"
-logger.level = logging.DEBUG
-
-handler = TimedRotatingFileHandler("logs/alexandria.log", 
-                                    interval=1, # every day
-                                    when='midnight', # rotate at midnight 
-                                    backupCount=14) # keep 14 days worth of logs
-handler.setFormatter(logging.Formatter('[%(name)s] %(asctime)s %(levelname)s %(message)s'))
-logger.addHandler(handler)
+# # setup logging, printing everything will make you cross eyed, trust me
+# logger = logging.getLogger()
+# logger.name = "alexandria"
+# logger.level = logging.DEBUG
+# 
+# handler = TimedRotatingFileHandler("logs/alexandria.log", 
+#                                     interval=1, # every day
+#                                     when='midnight', # rotate at midnight 
+#                                     backupCount=14) # keep 14 days worth of logs
+# handler.setFormatter(logging.Formatter('[%(name)s] %(asctime)s %(levelname)s %(message)s'))
+# logger.addHandler(handler)
 
 class MenuSystem(object):
     def __init__(self, *items):
